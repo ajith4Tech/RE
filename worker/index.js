@@ -3,7 +3,7 @@
 // The Durable Object holds only:
 //   - the current slot ("<route index>" or "<route index>.<sub>") and phase
 //   - vote tallies per slot, by option id (never by translated text)
-//   - word-cloud answers (pending / approved / rejected by the moderator)
+//   - word-cloud answers (pending / approved / rejected by the moderator), each tied to its question
 //   - how many phones use each language, the discussion timer, a random round id
 //   - anonymous random voter ids, to allow one vote per phone (wiped on reset)
 // No names, no IP addresses, no personal data.
@@ -14,7 +14,8 @@ import { partStrings } from "../public/js/i18n.js";
 import { isProfane } from "../public/js/profanity.js";
 
 const PHASES = ["idle", "arrive", "open", "closed", "reveal", "info", "end"];
-const SLOT_RE = /^\d{1,2}(\.[A-Za-z0-9_-]{1,12})?$/;
+// Slots are named by step id: "q3", "p4.1" (a viewpoint showcase or checkpost round), "q1.m" (mirror poll)
+const SLOT_RE = /^[A-Za-z0-9_-]{1,16}(\.[A-Za-z0-9_-]{1,12})?$/;
 const ID_RE = /^[A-Za-z0-9_-]{1,24}$/;
 const LANG_RE = /^[a-z]{2,3}$|^other:[\p{L}\p{M} ()'-]{1,40}$/u;
 const MAX_WORDS = 600;
@@ -76,7 +77,7 @@ function addToTally(t, a) {
 
 const emptyTally = () => ({ n: 0, counts: {}, pos: {}, nums: {} });
 const newRound = () => Math.random().toString(36).slice(2, 8);
-const freshState = () => ({ slot: "0", phase: "idle", round: newRound(), tallies: {}, langs: {}, words: [], wordSeq: 0, timer: { duration: 60, endsAt: null } });
+const freshState = () => ({ slot: "intro", phase: "idle", round: newRound(), tallies: {}, langs: {}, words: [], wordSeq: 0, timer: { duration: 60, endsAt: null } });
 
 // ------------------------------------------------------------------ Durable Object
 export class Game {
@@ -97,10 +98,21 @@ export class Game {
     return { running: t.endsAt > Date.now(), duration: t.duration, remainingMs: Math.max(0, t.endsAt - Date.now()) };
   }
 
+  // Approved answers for the question on screen, merged by text. Two-part clouds (dualcloud) keep each part separate.
   approvedWords() {
     const agg = {};
-    for (const w of this.state.words) if (w.status === "approved") agg[w.key] = { text: w.text, n: (agg[w.key]?.n || 0) + 1 };
+    for (const w of this.wordsHere()) {
+      if (w.status !== "approved") continue;
+      const k = `${w.part || ""}|${w.key}`;
+      agg[k] = { text: w.text, n: (agg[k]?.n || 0) + 1, ...(w.part ? { part: w.part } : {}) };
+    }
     return Object.values(agg);
+  }
+
+  /** Word-cloud entries for the question on screen. More than one question can be a word cloud (Q2, Q11). */
+  wordsHere() {
+    const q = String(this.state.slot).split(".")[0];
+    return this.state.words.filter((w) => w.slot === q);
   }
 
   publicState(forPresenter) {
@@ -112,6 +124,7 @@ export class Game {
       round: s.round,
       n: tally.n,
       languages: Object.keys(s.langs).filter((l) => s.langs[l] > 0).length,
+      riders: this.ctx.getWebSockets("voter").length, // phones connected right now (the lobby's "riders joined")
       timer: this.timerView(),
     };
     if (forPresenter || ["closed", "reveal", "end"].includes(s.phase)) {
@@ -121,7 +134,7 @@ export class Game {
     if (forPresenter) {
       out.langs = s.langs;
       out.words = this.approvedWords();
-      out.pending = s.words.filter((w) => w.status === "pending").length;
+      out.pending = this.wordsHere().filter((w) => w.status === "pending").length;
     }
     return out;
   }
@@ -135,6 +148,7 @@ export class Game {
       const pair = new WebSocketPair();
       this.ctx.acceptWebSocket(pair[1], [role]);
       pair[1].send(JSON.stringify({ type: "state", state: this.publicState(role === "presenter") }));
+      if (role === "voter") this.scheduleBroadcast(false); // the presenter's "riders joined" count
       return new Response(null, { status: 101, webSocket: pair[0] });
     }
     if (path === "/api/state" && request.method === "GET") return json(this.publicState(url.searchParams.get("role") === "presenter"));
@@ -185,24 +199,34 @@ export class Game {
   }
 
   // Word cloud: up to 3 short answers per phone, filtered, then queued for the moderator.
+  // Two-part clouds (dualcloud) send { entries: [{ part, text }, …] }: one answer per part per phone,
+  // all sent together, and each queued entry keeps its part so the moderator sees which cloud it is for.
   async word(body) {
     const { voter, slot, lang } = body || {};
     const s = this.state;
     if (!this.validVoter(voter)) return [{ error: "bad voter" }, 400];
-    const text = String(body?.text || "").replace(/\s+/g, " ").trim();
-    if (!text || [...text].length > 40) return [{ error: "1–40 characters" }, 400];
+    const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
+    const dual = Array.isArray(body?.entries);
+    const entries = dual ? body.entries.map((e) => ({ part: e?.part, text: clean(e?.text) })) : [{ part: null, text: clean(body?.text) }];
+    if (dual && (entries.length < 1 || entries.length > 2 || new Set(entries.map((e) => e.part)).size !== entries.length || !entries.every((e) => typeof e.part === "string" && ID_RE.test(e.part))))
+      return [{ error: "bad entries" }, 400];
+    if (!entries.every((e) => e.text && [...e.text].length <= 40)) return [{ error: "1–40 characters" }, 400];
     if (slot !== s.slot || s.phase !== "open") return [{ ok: false, reason: "closed" }, 409];
-    if (isProfane(text)) return [{ ok: false, reason: "rephrase" }, 200];
-    const mine = s.words.filter((w) => w.voter === voter).length;
-    if (mine >= WORDS_PER_PHONE) return [{ ok: false, reason: "limit" }, 200];
-    if (s.words.length >= MAX_WORDS) return [{ ok: false, reason: "full" }, 200];
-    s.words.push({ id: ++s.wordSeq, text, key: text.toLowerCase(), status: "pending", voter, lang: typeof lang === "string" ? lang.slice(0, 48) : "" });
+    const rude = entries.find((e) => isProfane(e.text));
+    if (rude) return [{ ok: false, reason: "rephrase", ...(dual ? { part: rude.part } : {}) }, 200];
+    // Limits and the "answers in" count are per question: a phone that answered Q2 counts again at Q11.
+    const here = this.wordsHere();
+    const mine = here.filter((w) => w.voter === voter).length;
+    if (dual ? entries.some((e) => here.some((w) => w.voter === voter && w.part === e.part)) : mine >= WORDS_PER_PHONE) return [{ ok: false, reason: "limit" }, 200];
+    if (s.words.length + entries.length > MAX_WORDS) return [{ ok: false, reason: "full" }, 200];
+    for (const e of entries)
+      s.words.push({ id: ++s.wordSeq, slot: s.slot.split(".")[0], text: e.text, key: e.text.toLowerCase(), status: "pending", voter, lang: typeof lang === "string" ? lang.slice(0, 48) : "", ...(e.part ? { part: e.part } : {}) });
     await this.noteLanguage(voter, lang);
     const t = (s.tallies[s.slot] = s.tallies[s.slot] || emptyTally());
     if (!mine) t.n += 1;
     this.ctx.storage.put("state", s);
     this.scheduleBroadcast(false);
-    return [{ ok: true, count: mine + 1 }, 200];
+    return [{ ok: true, count: mine + entries.length }, 200];
   }
 
   async admin(body) {
@@ -231,6 +255,9 @@ export class Game {
         if (!SLOT_RE.test(slot)) return [{ error: "bad slot" }, 400];
         if (!PHASES.includes(body.phase)) return [{ error: "bad phase" }, 400];
         const changed = s.slot !== slot || s.phase !== body.phase;
+        // Moving on to another question: entries the moderator never handled are cleared ("expired"),
+        // so they can't turn up in a later word cloud's queue.
+        if (s.slot.split(".")[0] !== slot.split(".")[0]) for (const w of s.words) if (w.status === "pending" && w.slot !== slot.split(".")[0]) w.status = "expired";
         if (s.slot.split(".")[0] !== slot.split(".")[0]) s.timer = { duration: s.timer?.duration || 60, endsAt: null };
         s.slot = slot;
         s.phase = body.phase;
@@ -245,8 +272,8 @@ export class Game {
         this.scheduleBroadcast(true);
         return [{ ok: true, state: this.publicState(true) }, 200];
       }
-      case "words":
-        return [{ ok: true, words: s.words.map(({ voter, ...w }) => w) }, 200];
+      case "words": // the moderator queue: this question only
+        return [{ ok: true, words: this.wordsHere().map(({ voter, ...w }) => w) }, 200];
       case "word": {
         const w = s.words.find((x) => x.id === Number(body.id));
         if (!w || !["approved", "rejected", "pending"].includes(body.status)) return [{ error: "bad word" }, 400];
@@ -258,7 +285,8 @@ export class Game {
       case "addWord": {
         const text = String(body.text || "").replace(/\s+/g, " ").trim().slice(0, 40);
         if (!text) return [{ error: "empty" }, 400];
-        s.words.push({ id: ++s.wordSeq, text, key: text.toLowerCase(), status: "approved", voter: "presenter", lang: "" });
+        const part = typeof body.part === "string" && ID_RE.test(body.part) ? body.part : null;
+        s.words.push({ id: ++s.wordSeq, slot: s.slot.split(".")[0], text, key: text.toLowerCase(), status: "approved", voter: "presenter", lang: "", ...(part ? { part } : {}) });
         await this.ctx.storage.put("state", s);
         this.scheduleBroadcast(false);
         return [{ ok: true }, 200];
@@ -301,6 +329,7 @@ export class Game {
     try {
       ws.close(code === 1005 ? 1000 : code, "bye");
     } catch {}
+    this.scheduleBroadcast(false);
   }
   async webSocketError() {}
 }
