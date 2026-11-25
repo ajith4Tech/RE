@@ -36,7 +36,9 @@
     .answer { font: 700 21px/1.4 var(--body); }
     ul, ol { margin: 6px 0 0; padding-left: 22px; } li { margin: 6px 0; line-height: 1.4; }
     .queue { list-style: none; padding: 0; } .queue li { display: flex; gap: 10px; align-items: center; justify-content: space-between; border-bottom: 1px solid #BDB4A3; padding: 6px 0; }
-    .queue .w { font: 700 20px var(--body); } .qbtns { display: flex; gap: 6px; flex: none; }
+    .queue .w { font: 700 20px var(--body); flex: 1; min-width: 0; } .qbtns { display: flex; gap: 6px; flex: none; }
+    .ptag { flex: none; font: 800 14px/1 var(--sign); letter-spacing: .1em; text-transform: uppercase; padding: 5px 8px 4px; color: var(--chalk); margin-inline-end: 8px; }
+    .ptag.green { background: var(--green); } .ptag.red { background: var(--red); }
     .timer { text-align: center; } .tnum { font: 800 76px/1 var(--sign); margin: 6px 0 10px; }
     .trow { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
     .note { font-size: 15px; color: var(--ink-2); margin-top: 8px !important; }
