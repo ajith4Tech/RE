@@ -4,8 +4,8 @@
  * Accessibility: native controls where possible (radios, checkboxes, sliders, labels),
  * a polite live region for status, ≥ 48px targets, lang/dir on all translated text.
  */
-import { LANGUAGES, langMeta, localize, fmt, tr, gapsFor, nestStrings } from "./i18n.js";
-import { portrait } from "./scenery.js";
+import { LANGUAGES, langMeta, localize, fmt, tr, gapsFor, nestStrings, expandRoute } from "./i18n.js";
+import { emblem } from "./scenery.js";
 import { isProfane } from "./profanity.js";
 
 const $ = (s) => document.querySelector(s);
@@ -17,14 +17,24 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
 const LETTERS = "ABCDEFGH";
+const ARROW = `<svg viewBox="0 0 48 32" aria-hidden="true" focusable="false"><path d="M3 16 H40 M27 4 L42 16 L27 28" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const GRIP = `<svg viewBox="0 0 16 28" width="16" height="28" aria-hidden="true" focusable="false">${[4, 12].map((x) => [5, 14, 23].map((y) => `<circle cx="${x}" cy="${y}" r="2.6" fill="currentColor"/>`).join("")).join("")}</svg>`;
+const TOLL = `<svg class="toll" viewBox="0 0 110 132" aria-hidden="true" focusable="false"><rect x="10" y="40" width="14" height="86" fill="#1A1A1A"/><rect x="0" y="122" width="34" height="10" fill="#1A1A1A"/><g class="boom"><rect x="17" y="44" width="90" height="14" rx="3" fill="#F5F1E6" stroke="#1A1A1A" stroke-width="3"/>${[30, 54, 78].map((x) => `<rect x="${x}" y="45.5" width="12" height="11" fill="#B5462B"/>`).join("")}</g><circle cx="17" cy="24" r="16" fill="#F2C230" stroke="#1A1A1A" stroke-width="4"/></svg>`;
 const MILESTONE = `<svg class="v-ms" viewBox="0 0 120 140" aria-hidden="true"><path d="M10 136V60a50 50 0 0 1 100 0v76z" fill="#F5F1E6" stroke="#1A1A1A" stroke-width="6"/><path d="M10 60a50 50 0 0 1 100 0z" fill="#F2C230" stroke="#1A1A1A" stroke-width="6"/></svg>`;
 
 let en = null;
 let content = null;
+let ER = []; // the English route, expanded: every step with its stop's place and persona
+let crFor = null;
+let CR = []; // the same, in the voter's language
+/** The localized expanded route, rebuilt whenever the language (content) changes. */
+const cr = () => (crFor === content ? CR : ((crFor = content), (CR = expandRoute(content))));
+let lastSlot = null;
 let lang = store.get("ride.lang");
 let state = null;
 let renderedKey = "";
 let sending = false;
+let pendingAnswer = null; // shown as selected while it is being sent
 let pickingLanguage = false;
 let otherNote = "";
 const draft = {};
@@ -159,14 +169,17 @@ function chooseLanguage(code) {
 }
 
 // ---------------------------------------------------------------- helpers
+// The step on screen comes from the slot, which is named by step id ("q3", "p4.1", "q1.m").
+const idOf = () => String(state?.slot).split(".")[0];
 function currentItem() {
   if (!state || !en) return null;
-  const i = Number(String(state.slot).split(".")[0]);
-  return en.route[i] ? content.route[i] : null;
+  const i = iOf();
+  return i >= 0 ? cr()[i] : null;
 }
-const subOf = () => Number(String(state.slot).split(".")[1] || 0);
-const qNumber = (i) => en.route.slice(0, i + 1).filter((r) => r.kind === "question").length;
-const iOf = () => Number(String(state.slot).split(".")[0]);
+const isMirror = () => String(state?.slot).endsWith(".m"); // a mirror poll after a question
+const subOf = () => (isMirror() ? 0 : Number(String(state.slot).split(".")[1] || 0));
+const qNumber = (i) => ER.slice(0, i + 1).filter((r) => r.kind === "question").length;
+const iOf = () => ER.findIndex((r) => r.id === idOf());
 
 async function renderRoad() {
   const box = $("#road");
@@ -217,7 +230,7 @@ function render(force) {
   const note = otherNote ? `<p class="v-ai">${esc(otherNote)}</p>` : "";
   const ph = state.phase;
 
-  if (!it || ph === "idle") {
+  if (!it || ph === "idle" || it.kind === "intro") {
     app.innerHTML = `${note}<div class="v-wait">${MILESTONE}<h1 class="v-big">${esc(content.title)}</h1><p class="v-sub">${esc(content.subtitle)}</p><p class="v-sub">${esc(ui().waitingTitle)}. ${esc(ui().waitingBody)}</p></div>`;
     return;
   }
@@ -226,17 +239,26 @@ function render(force) {
     return;
   }
 
+  if (it.kind === "card") {
+    // Info card: shown while the projector is on it, no vote
+    const link = it.link?.url ? `<a class="v-link" href="${esc(it.link.url)}" target="_blank" rel="noopener">${esc(ui().openLink)} ↗</a>` : "";
+    app.innerHTML = `${note}<div class="v-board viewpoint"><b>${esc(it.title)}</b></div>
+      ${it.rows ? `<table class="v-tokens">${it.rows.map((r) => `<tr><td>${esc(r.from)}</td><td aria-hidden="true">→</td><td class="tok">${esc(r.to)}</td></tr>`).join("")}</table>` : ""}
+      <p class="v-scenario">${esc(it.text)}</p>${link}<p class="v-note">${esc(ui().lookUp)}</p>`;
+    return;
+  }
   let head;
   if (it.kind === "question") {
-    head = `<p class="v-kicker">${esc(fmt(ui().questionN, { n: qNumber(iOf()) }))} · ${esc(short(it.place))}</p>
-      <div class="v-tag"><div class="pic">${portrait(en.route[iOf()].portrait, 64)}</div><div><b>${esc(it.personaName)}</b><span>${esc(it.role)} · ${esc(it.orgType)}</span></div></div>
-      <p class="v-shift"><b>${esc(ui().shift)}</b>${esc(it.shift)}</p>`;
+    const who = [it.role, it.orgType].filter(Boolean).map(esc).join(" · ");
+    head = `<p class="v-kicker">${esc(fmt(ui().questionN, { n: qNumber(iOf()) }))} · ${esc(it.milestone || short(it.place))}</p>
+      <div class="v-tag"><div class="pic">${emblem(ER[iOf()].emblem, 64, it.id)}</div><div><b>${esc(it.personaName)}</b>${who ? `<span>${who}</span>` : ""}</div>${it.voice ? `${ph === "arrive" ? `<i class="v-voice">“${esc(it.voice)}”</i>` : ""}` : ""}</div>
+      ${isMirror() ? `<p class="v-shift"><b>${esc(ui().mirror)}</b></p>` : it.shift ? `<p class="v-shift"><b>${esc(ui().shift)}</b>${esc(it.shift)}</p>` : ""}`;
   } else {
-    head = `<p class="v-kicker">${esc(ui().pitstop)} · ${esc(it.place)}</p><div class="v-board ${en.route[iOf()].pitType}"><b>${esc(it.board)}</b></div>`;
+    head = `<p class="v-kicker">${esc(ui().pitstop)} · ${esc(it.place)}</p><div class="v-board ${ER[iOf()].pitType}"><b>${esc(it.board)}</b></div>`;
   }
 
   if (ph === "arrive") {
-    app.innerHTML = `${note}${head}${it.kind === "question" ? `<p class="v-scenario">${esc(it.scenario)}</p>` : ""}<p class="v-note">${esc(it.kind === "question" ? ui().questionSoon : ui().lookUp)}</p>`;
+    app.innerHTML = `${note}${head}${it.kind === "question" && it.scenario ? `<p class="v-scenario">${esc(it.scenario)}</p>` : ""}<p class="v-note">${esc(it.kind === "question" ? ui().questionSoon : ui().lookUp)}</p>`;
     return;
   }
   if (ph === "info") {
@@ -248,8 +270,14 @@ function render(force) {
   // open / closed / reveal
   const q = questionBlock(it);
   let body = "";
-  if (ph === "open" && (mine === undefined || (it.type === "wordcloud" && words < 3))) body = votingUI(it, words);
-  else if (mine !== undefined || words) body = `<p class="v-note good" role="status">${esc(it.type === "wordcloud" ? ui().wordSent : ui().voteRecorded)}</p>`;
+  const cloud = (it.type === "wordcloud" || it.type === "dualcloud") && !isMirror(); // a mirror after a cloud is a normal poll
+  const counted = `<p class="v-note good v-locked" role="status">${esc(ui().voteCounted)} <span>${esc(ui().lookUp)}</span></p>`;
+  if (cloud) {
+    if (ph === "open" && (it.type === "wordcloud" ? words < 3 : !words)) body = votingUI(it, words);
+    else if (words) body = `<p class="v-note good" role="status">${esc(it.type === "dualcloud" ? ui().dualSent : ui().wordSent)}</p>`;
+  } else if (ph === "open" && mine === undefined) body = votingUI(it, words);
+  else if (mine !== undefined && ph !== "reveal") body = votingUI(it, words, mine) + counted; // locked: what you picked stays on screen
+  else if (mine !== undefined) body = counted;
   if (ph === "closed") body += `<p class="v-note">${esc(ui().votingClosed)}</p>`;
   if (ph === "reveal") body += revealBlock(it);
   app.innerHTML = `${note}${head}${q}${body}`;
@@ -257,8 +285,9 @@ function render(force) {
 }
 
 function questionBlock(it) {
-  if (it.kind === "question") return `<p class="v-scenario">${esc(it.scenario)}</p><h1 class="v-q" id="qh">${esc(it.question)}</h1>`;
-  const t = en.route[iOf()].pitType;
+  if (it.kind === "question" && isMirror()) return `<h1 class="v-q" id="qh">${esc(it.mirror.question)}</h1>`;
+  if (it.kind === "question") return `${it.scenario ? `<p class="v-scenario">${esc(it.scenario)}</p>` : ""}<h1 class="v-q" id="qh">${esc(it.question)}</h1>`;
+  const t = ER[iOf()].pitType;
   if (t === "viewpoint") {
     const sc = it.showcases[subOf()];
     return `<div class="v-show">${sc.image ? `<img src="/${esc(sc.image)}" alt="${esc(sc.title)}"/>` : ""}<b>${esc(sc.title)}</b>${sc.url ? `<a href="${esc(sc.url)}" target="_blank" rel="noopener">${esc(ui().openSite)} ↗</a>` : ""}</div>`;
@@ -270,70 +299,98 @@ function questionBlock(it) {
   return `<h1 class="v-q" id="qh">${esc(it.poll.question)}</h1>`;
 }
 
-function optButtons(list, keyFn = (k) => LETTERS[k]) {
-  return `<div class="v-opts" role="group" aria-labelledby="qh">${list
-    .map((o, k) => `<button type="button" class="v-opt" data-a="${esc(o.id)}" ${sending ? "disabled" : ""}><span class="l" aria-hidden="true">${esc(keyFn(k))}</span><span>${esc(o.text)}</span></button>`)
+/** Options as sign-style buttons. `sel` is the picked id (shown green with a check); `locked` after voting. */
+function optButtons(list, keyFn = (k) => LETTERS[k], { cls = "", sel, locked = false } = {}) {
+  return `<div class="v-opts ${cls}" role="group" aria-labelledby="qh">${list
+    .map((o, k) => {
+      const on = sel === o.id;
+      return `<button type="button" class="v-opt${on ? " mine" : ""}" data-a="${esc(o.id)}" aria-pressed="${on}" ${locked || sending ? "disabled" : ""}><span class="l" aria-hidden="true">${on ? "✓" : esc(keyFn(k))}</span><span class="t">${esc(o.text)}</span><span class="ar" aria-hidden="true">${ARROW}</span></button>`;
+    })
     .join("")}</div>`;
 }
 
-function votingUI(it, words) {
+function votingUI(it, words, lock) {
   const slot = String(state.slot);
-  const d = (draft[slot] = draft[slot] || { picks: [], order: [], match: {}, est: {}, polls: {}, text: "" });
+  const locked = lock !== undefined;
+  const fresh = () => ({ picks: [], order: [], match: {}, est: {}, polls: {}, text: "", parts: {} });
+  const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+  const d = locked
+    ? { ...fresh(), picks: Array.isArray(lock) ? lock : [], order: Array.isArray(lock) ? lock : [], match: obj(lock), est: obj(lock), polls: obj(lock) }
+    : (draft[slot] = draft[slot] || fresh());
+  const sel = locked ? lock : sending ? pendingAnswer : undefined;
+  const dis = locked || sending ? "disabled" : "";
   const U = ui();
-  const send = (label = U.submit, disabled = false) => `<div class="v-actions"><button type="button" class="v-go" data-act="send" ${disabled || sending ? "disabled" : ""}>${esc(sending ? U.sending : label)}</button></div>`;
+  const send = (label = U.submit, disabled = false) => (locked ? "" : `<div class="v-actions"><button type="button" class="v-go" data-act="send" ${disabled || sending ? "disabled" : ""}>${esc(sending ? U.sending : label)}</button></div>`);
+  const help = (txt, id = "") => (locked ? "" : `<p class="v-help"${id ? ` id="${id}"` : ""}>${esc(txt)}</p>`);
+  if (it.kind === "question" && isMirror()) return `${help(U.tapAnswer)}${optButtons(it.mirror.options, undefined, { sel, locked })}`;
   if (it.kind === "pitstop") {
-    const t = en.route[iOf()].pitType;
-    if (t === "checkpost") return `<p class="v-help">${esc(U.tapAnswer)}</p>${optButtons(it.options)}`;
+    const t = ER[iOf()].pitType;
+    if (t === "checkpost") return `${help(U.tapAnswer)}${optButtons(it.options, undefined, { sel, locked })}`;
     if (t === "viewpoint") {
       const all = it.polls.every((p) => d.polls[p.id]);
-      return it.polls.map((p) => radioGroup(`poll-${p.id}`, p.question, p.options, d.polls[p.id])).join("") + send(U.submit, !all);
+      return it.polls.map((p) => radioGroup(`poll-${p.id}`, p.question, p.options, d.polls[p.id], "signs", locked)).join("") + send(U.submit, !all);
     }
-    return `<p class="v-help">${esc(U.tapAnswer)}</p>${optButtons(it.poll.options)}`;
+    return `${help(U.tapAnswer)}${optButtons(it.poll.options, undefined, { sel, locked })}`;
   }
   switch (it.type) {
     case "choose":
-      return `<p class="v-help">${esc(U.tapAnswer)}</p>${optButtons(it.options)}`;
+      return `${help(U.tapAnswer)}${optButtons(it.options, undefined, { sel, locked })}`;
     case "tapstep":
-      return `<p class="v-help">${esc(U.tapstepHelp)}</p>${optButtons(it.steps, (k) => k + 1)}`;
+      return `${help(U.tapstepHelp)}${optButtons(it.steps, (k) => k + 1, { cls: "v-milestones", sel, locked })}`;
     case "checkpoint": {
+      // Each gap is a toll barrier: tapping it lifts the boom (a human approves here) and sends the answer.
       const gaps = gapsFor(it);
-      let h = `<p class="v-help" id="cph">${esc(U.checkpointHelp)}</p><ol class="v-pipe" aria-labelledby="cph">`;
+      let h = `${help(U.checkpointHelp, "cph")}<ol class="v-pipe" aria-labelledby="${locked ? "qh" : "cph"}">`;
       it.steps.forEach((s, k) => {
         h += `<li class="st"><small>${esc(fmt(U.step, { n: k + 1 }))}</small>${esc(s.text)}</li>`;
-        if (gaps[k]) h += `<li class="v-gap"><button type="button" data-a="${gaps[k].id}" ${sending ? "disabled" : ""}>✋ ${esc(fmt(U.gapLabel, { b: gaps[k].before.text }))}</button></li>`;
+        if (gaps[k]) {
+          const on = sel === gaps[k].id;
+          h += `<li class="v-gap"><button type="button" class="v-toll${on ? " lifted" : ""}" data-a="${gaps[k].id}" aria-pressed="${on}" ${dis}>${TOLL}<span>${on ? "✓ " : ""}${esc(fmt(U.gapLabel, { b: gaps[k].before.text }))}</span></button></li>`;
+        }
       });
       return h + `</ol>`;
     }
     case "pickn": {
       const n = it.n;
-      return `<p class="v-help" id="pkh">${esc(fmt(U.pickHelp, { n }))}</p>
-        <div class="v-opts" role="group" aria-labelledby="pkh">${it.items
-          .map((o, k) => `<button type="button" class="v-opt" role="checkbox" aria-checked="${d.picks.includes(o.id)}" data-pick="${o.id}"><span class="l" aria-hidden="true">${d.picks.includes(o.id) ? "✓" : k + 1}</span><span>${esc(o.text)}</span></button>`)
+      return `${help(fmt(U.pickHelp, { n }), "pkh")}
+        <div class="v-opts v-chips" role="group" aria-labelledby="${locked ? "qh" : "pkh"}">${it.items
+          .map((o, k) => {
+            const on = d.picks.includes(o.id);
+            return `<button type="button" class="v-opt${on ? " mine" : ""}" role="checkbox" aria-checked="${on}" data-pick="${o.id}" ${dis}><span class="l" aria-hidden="true">${on ? "✓" : k + 1}</span><span class="t">${esc(o.text)}</span></button>`;
+          })
           .join("")}</div>
-        <p class="v-count" aria-live="polite">${esc(fmt(U.picked, { k: d.picks.length, n }))}</p>${send(U.submit, d.picks.length !== n)}`;
+        ${locked ? "" : `<p class="v-count" aria-live="polite">${esc(fmt(U.picked, { k: d.picks.length, n }))}</p>`}${send(U.submit, d.picks.length !== n)}`;
     }
     case "rank": {
+      // Tap items in order; the placed ones become stacked signs that can be dragged by the handle
+      // (or moved with the arrow buttons / arrow keys) to change the order.
       const left = it.items.filter((x) => !d.order.includes(x.id));
-      return `<p class="v-help" id="rkh">${esc(U.rankHelp)}</p>
-        <ol class="v-ranked" aria-label="${esc(U.rankHelp)}">${d.order
-          .map((id, k) => `<li><span class="n" aria-hidden="true">${k + 1}</span><span>${esc(it.items.find((x) => x.id === id).text)}</span>${k === 0 ? `<em>${esc(U.lowestRisk)}</em>` : k === it.items.length - 1 ? `<em>${esc(U.highestRisk)}</em>` : ""}</li>`)
-          .join("")}</ol>
-        <div class="v-opts" role="group" aria-labelledby="rkh">${left.map((x) => `<button type="button" class="v-opt" data-rank="${x.id}"><span class="l" aria-hidden="true">${d.order.length + 1}</span><span>${esc(x.text)}</span></button>`).join("")}</div>
-        <div class="v-actions"><button type="button" class="v-sec" data-act="clear" ${d.order.length ? "" : "disabled"}>${esc(U.startOver)}</button><button type="button" class="v-go" data-act="send" ${d.order.length === it.items.length && !sending ? "" : "disabled"}>${esc(sending ? U.sending : U.submit)}</button></div>`;
+      const last = d.order.length - 1;
+      const row = (id, k) => {
+        const text = it.items.find((x) => x.id === id).text;
+        const tag = k === 0 ? `<small>${esc(U.lowestRisk)}</small>` : k === it.items.length - 1 ? `<small>${esc(U.highestRisk)}</small>` : "";
+        if (locked) return `<li class="locked" data-id="${esc(id)}"><span class="n" aria-hidden="true">${k + 1}</span><span class="t">${esc(text)}${tag}</span></li>`;
+        return `<li data-id="${esc(id)}"><button type="button" class="v-grip" data-grip="${esc(id)}" aria-label="${esc(`${k + 1}. ${text}. ${U.dragHelp}`)}">${GRIP}</button><span class="n" aria-hidden="true">${k + 1}</span><span class="t">${esc(text)}${tag}</span>
+          <button type="button" class="v-move" data-move="-1" data-id="${esc(id)}" aria-label="${esc(`${U.moveUp}: ${text}`)}" ${k === 0 ? "disabled" : ""}>▲</button><button type="button" class="v-move" data-move="1" data-id="${esc(id)}" aria-label="${esc(`${U.moveDown}: ${text}`)}" ${k === last ? "disabled" : ""}>▼</button></li>`;
+      };
+      return `${help(U.rankHelp, "rkh")}${d.order.length > 1 && !locked ? `<p class="v-count">${esc(U.dragHelp)}</p>` : ""}
+        <ol class="v-ranked" aria-label="${esc(U.rankHelp)}">${d.order.map(row).join("")}</ol>
+        ${locked ? "" : `<div class="v-opts v-stackin" role="group" aria-labelledby="rkh">${left.map((x) => `<button type="button" class="v-opt" data-rank="${x.id}"><span class="l" aria-hidden="true">${d.order.length + 1}</span><span class="t">${esc(x.text)}</span><span class="ar" aria-hidden="true">${ARROW}</span></button>`).join("")}</div>
+        <div class="v-actions"><button type="button" class="v-sec" data-act="clear" ${d.order.length ? "" : "disabled"}>${esc(U.startOver)}</button><button type="button" class="v-go" data-act="send" ${d.order.length === it.items.length && !sending ? "" : "disabled"}>${esc(sending ? U.sending : U.submit)}</button></div>`}`;
     }
     case "match":
-      return `<p class="v-help">${esc(U.matchHelp)}</p>${it.items.map((x) => radioGroup(`m-${x.id}`, x.text, it.buckets, d.match[x.id])).join("")}${send(U.submit, it.items.some((x) => !d.match[x.id]))}`;
+      return `${help(U.matchHelp)}${it.items.map((x) => radioGroup(`m-${x.id}`, x.text, it.buckets, d.match[x.id], "lanes", locked)).join("")}${send(U.submit, it.items.some((x) => !d.match[x.id]))}`;
     case "estimate": {
       const fmtv = (s, v) => (s.format === "inr" ? "₹" + Number(v).toLocaleString("en-IN") : `${v}`);
-      return `<p class="v-help">${esc(U.estimateHelp)}</p>${it.periods
+      return `${help(U.estimateHelp)}${it.periods
         .map(
           (per) => `<section class="v-est" aria-labelledby="est-${per.id}"><h2 id="est-${per.id}">${esc(per.text)}</h2>${it.sliders
             .map((s) => {
               const id = `${per.id}_${s.id}`;
               const v = d.est[id] ?? Math.round((s.max - s.min) / (s.format === "inr" ? 4 : 3) / s.step) * s.step;
-              d.est[id] = v;
+              if (!locked) d.est[id] = v;
               return `<div class="v-slider"><label for="r-${id}"><span>${esc(s.text)}</span><output id="o-${id}" for="r-${id}">${esc(fmtv(s, v))}</output></label>
-                <input type="range" id="r-${id}" data-est="${id}" data-fmt="${s.format}" min="${s.min}" max="${s.max}" step="${s.step}" value="${v}" aria-valuetext="${esc(fmtv(s, v))}"/></div>`;
+                <input type="range" id="r-${id}" ${dis} data-est="${id}" data-fmt="${s.format}" min="${s.min}" max="${s.max}" step="${s.step}" value="${v}" aria-valuetext="${esc(fmtv(s, v))}"/></div>`;
             })
             .join("")}</section>`
         )
@@ -343,33 +400,51 @@ function votingUI(it, words) {
       return `<div class="v-word"><label for="word">${esc(U.wordHelp)}</label><input id="word" maxlength="40" autocomplete="off" value="${esc(d.text)}" aria-describedby="wc"/>
         <p class="v-count" id="wc" aria-live="polite">${esc(fmt(U.charsLeft, { n: 40 - [...d.text].length }))}</p></div>
         ${words ? `<p class="v-note good">${esc(U.wordSent)}</p>` : ""}${send(words ? U.wordAnother : U.submit, !d.text.trim())}`;
+    case "dualcloud": {
+      // Two short answers, either may be blank, one Submit button.
+      const any = it.parts.some((pt) => (d.parts[pt.id] || "").trim());
+      return `<p class="v-help">${esc(U.dualHelp)}</p>${it.parts
+        .map((pt) => {
+          const v = d.parts[pt.id] || "";
+          return `<div class="v-part ${esc(pt.color)}"><label for="w-${pt.id}"><span class="v-ptag">${esc(pt.title)}</span>${esc(pt.text)}</label>
+            <input id="w-${pt.id}" data-part="${pt.id}" maxlength="40" autocomplete="off" value="${esc(v)}" aria-describedby="wc-${pt.id}"/>
+            <p class="v-count" id="wc-${pt.id}" aria-live="polite">${esc(fmt(U.charsLeft, { n: 40 - [...v].length }))}</p></div>`;
+        })
+        .join("")}${send(U.submit, !any)}`;
+    }
   }
   return "";
 }
 
-function radioGroup(name, legend, options, checked) {
-  return `<fieldset class="v-group"><legend>${esc(legend)}</legend><div class="v-radios">${options
-    .map((o) => `<div class="v-radio"><input type="radio" name="${esc(name)}" id="${esc(name)}-${esc(o.id)}" value="${esc(o.id)}" ${checked === o.id ? "checked" : ""}/><label for="${esc(name)}-${esc(o.id)}">${esc(o.text)}</label></div>`)
+/** style: "lanes" (match buckets as road lanes) or "signs" (viewpoint polls as sign buttons) */
+function radioGroup(name, legend, options, checked, style = "", locked = false) {
+  return `<fieldset class="v-group ${style}" ${locked ? "disabled" : ""}><legend>${esc(legend)}</legend><div class="v-radios">${options
+    .map((o) => `<div class="v-radio"><input type="radio" name="${esc(name)}" id="${esc(name)}-${esc(o.id)}" value="${esc(o.id)}" ${checked === o.id ? "checked" : ""}/><label for="${esc(name)}-${esc(o.id)}"><span class="t">${esc(o.text)}</span></label></div>`)
     .join("")}</div></fieldset>`;
 }
 
 function revealBlock(it) {
   const U = ui();
   const t = state.tally || { n: 0, counts: {} };
-  const rawIt = en.route[iOf()];
+  const rawIt = ER[iOf()];
   let ans = "";
   let rows = [];
   const txt = (list, id) => list.find((o) => o.id === id)?.text ?? id;
+  if (it.kind === "question" && isMirror()) {
+    rows = it.mirror.options.map((o) => ({ label: o.text, n: t.counts[o.id] || 0 }));
+    return `<section class="v-reveal"><b class="h">${esc(U.noRightAnswer)}</b></section>${t.n ? bars(rows) : ""}`;
+  }
   if (it.kind === "question") {
     switch (it.type) {
-      case "choose": ans = `${it.answer}: ${txt(it.options, it.answer)}`; rows = it.options.map((o) => ({ label: o.id, n: t.counts[o.id] || 0 })); break;
+      case "choose": ans = it.answer ? `${it.answer}: ${txt(it.options, it.answer)}` : ""; rows = it.options.map((o) => ({ label: o.id, n: t.counts[o.id] || 0 })); break;
       case "tapstep": ans = `${fmt(U.step, { n: it.steps.findIndex((s) => s.id === it.answer) + 1 })}: ${txt(it.steps, it.answer)}`; rows = it.steps.map((o, k) => ({ label: fmt(U.step, { n: k + 1 }), n: t.counts[o.id] || 0 })); break;
       case "checkpoint": { const g = gapsFor(it).find((x) => x.id === it.answer); ans = fmt(U.gapLabel, { b: g.before.text }); rows = gapsFor(it).map((g2) => ({ label: g2.before.text, n: t.counts[g2.id] || 0 })); break; }
       case "pickn": ans = it.items.filter((x) => !rawIt.decoys.includes(x.id)).map((x) => x.text).join(", "); rows = it.items.map((x) => ({ label: x.text, n: t.counts[x.id] || 0 })); break;
       case "rank": ans = `${U.lowestRisk}: ${txt(it.items, it.firstItem)} · ${U.highestRisk}: ${txt(it.items, it.lastItem)}`; break;
       case "match": ans = it.items.map((x) => `${x.text} → ${txt(it.buckets, it.answers[x.id])}`).join(" · "); break;
       case "estimate": ans = `${it.periods[0].text}: ${it.answerText.then} · ${it.periods[1].text}: ${it.answerText.now}`; break;
-      case "wordcloud": ans = ""; break;
+      case "wordcloud":
+      case "dualcloud": ans = ""; break;
     }
     return `<section class="v-reveal" aria-labelledby="rv">${ans ? `<b class="h" id="rv">${esc(U.answer)}</b><p>${esc(ans)}</p>` : `<b class="h" id="rv">${esc(U.noRightAnswer)}</b>`}<p>${esc(it.reveal)}</p></section>${rows.length && t.n ? bars(rows) : ""}`;
   }
@@ -393,6 +468,7 @@ function revealBlock(it) {
 function wire(it) {
   const slot = String(state.slot);
   const d = draft[slot];
+  if (!d) return; // locked view: nothing to wire
   app.querySelectorAll("[data-a]").forEach((b) => b.addEventListener("click", () => send(b.dataset.a)));
   app.querySelectorAll("[data-pick]").forEach((b) =>
     b.addEventListener("click", () => {
@@ -430,6 +506,57 @@ function wire(it) {
       r.setAttribute("aria-valuetext", text);
     })
   );
+  // rank: drag a handle, or use the arrow buttons / arrow keys, to reorder the placed items
+  const moveTo = (id, delta) => {
+    const k = d.order.indexOf(id);
+    const j = k + delta;
+    if (k < 0 || j < 0 || j >= d.order.length) return;
+    d.order.splice(j, 0, d.order.splice(k, 1)[0]);
+    announce(`${j + 1}: ${it.items.find((x) => x.id === id).text}`);
+    render(true);
+  };
+  app.querySelectorAll("[data-move]").forEach((b) =>
+    b.addEventListener("click", () => {
+      moveTo(b.dataset.id, Number(b.dataset.move));
+      const again = app.querySelector(`[data-move="${b.dataset.move}"][data-id="${b.dataset.id}"]:not(:disabled)`) || app.querySelector(`[data-grip="${b.dataset.id}"]`);
+      again?.focus();
+    })
+  );
+  app.querySelectorAll("[data-grip]").forEach((g) => {
+    g.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      e.preventDefault();
+      moveTo(g.dataset.grip, e.key === "ArrowUp" ? -1 : 1);
+      app.querySelector(`[data-grip="${g.dataset.grip}"]`)?.focus();
+    });
+    g.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const li = g.closest("li");
+      const list = li.parentElement;
+      g.setPointerCapture(e.pointerId);
+      li.classList.add("dragging");
+      const move = (ev) => {
+        const after = [...list.children].filter((x) => x !== li).find((x) => ev.clientY < x.getBoundingClientRect().top + x.offsetHeight / 2);
+        if (after !== li.nextElementSibling) list.insertBefore(li, after || null);
+      };
+      const up = () => {
+        g.removeEventListener("pointermove", move);
+        li.classList.remove("dragging");
+        d.order = [...list.children].map((x) => x.dataset.id);
+        render(true);
+      };
+      g.addEventListener("pointermove", move);
+      g.addEventListener("pointerup", up, { once: true });
+      g.addEventListener("pointercancel", up, { once: true });
+    });
+  });
+  app.querySelectorAll("[data-part]").forEach((inp) =>
+    inp.addEventListener("input", () => {
+      d.parts[inp.dataset.part] = inp.value;
+      $(`#wc-${inp.dataset.part}`).textContent = fmt(ui().charsLeft, { n: 40 - [...inp.value].length });
+      app.querySelector('[data-act="send"]').disabled = !Object.values(d.parts).some((v) => v.trim());
+    })
+  );
   const word = $("#word");
   if (word)
     word.addEventListener("input", () => {
@@ -449,6 +576,7 @@ function wire(it) {
       case "match": return send({ ...d.match });
       case "estimate": return send({ ...d.est });
       case "wordcloud": return sendWord(d.text);
+      case "dualcloud": return sendDual(d.parts);
     }
   });
 }
@@ -469,10 +597,12 @@ async function send(answer) {
   if (!state || state.phase !== "open" || sending || memory().v?.[state.slot] !== undefined) return;
   const slot = String(state.slot);
   sending = true;
+  pendingAnswer = answer;
   render(true);
   const { status, data } = await post("/api/vote", { voter: VOTER, slot, answer, lang: lang || "en" });
   if (data.state) state = data.state;
   sending = false;
+  pendingAnswer = null;
   if (status === 200 && data.ok) {
     remember("v", slot, data.answer ?? answer);
     announce(ui().voteRecorded);
@@ -499,6 +629,25 @@ async function sendWord(text) {
   }
   render(true);
 }
+/** dualcloud: both parts in one request; blank parts are left out. */
+async function sendDual(parts) {
+  const slot = String(state.slot);
+  const entries = Object.entries(parts)
+    .map(([part, t]) => ({ part, text: String(t || "").replace(/\s+/g, " ").trim() }))
+    .filter((e) => e.text);
+  if (!entries.length) return;
+  if (entries.some((e) => isProfane(e.text))) return announce(ui().wordRejected), alertNote(ui().wordRejected);
+  sending = true;
+  render(true);
+  const { status, data } = await post("/api/word", { voter: VOTER, slot, entries, lang: lang || "en" });
+  sending = false;
+  if ((status === 200 && data.ok) || data.reason === "limit") {
+    remember("w", slot, data.count || entries.length);
+    draft[slot].parts = {};
+    announce(ui().dualSent);
+  } else if (data.reason === "rephrase") return alertNote(ui().wordRejected);
+  render(true);
+}
 function alertNote(msg) {
   sending = false;
   render(true);
@@ -509,6 +658,18 @@ async function applyState(st) {
   if (!st) return;
   const prev = state?.slot;
   state = st;
+  if (String(st.slot) !== String(lastSlot)) {
+    // A new step: forget drafts and any half-sent answer from the previous one, and keep the
+    // "already voted" memory only for this step, so a phone never shows a cached earlier question.
+    lastSlot = st.slot;
+    for (const k of Object.keys(draft)) if (k !== String(st.slot)) delete draft[k];
+    sending = false;
+    pendingAnswer = null;
+    const m = memory();
+    for (const kind of ["v", "w"]) for (const k of Object.keys(m[kind] || {})) if (k !== String(st.slot)) delete m[kind][k];
+    store.set("ride.votes", JSON.stringify(m));
+    renderedKey = "";
+  }
   if (isOther() && String(st.slot) !== String(prev)) {
     const it = currentItem();
     if (it) await translateOther(it.id);
@@ -549,7 +710,7 @@ function connect() {
     setConn(false, "reconnecting");
     poll();
     setTimeout(connect, backoff + Math.random() * 1000); // jitter so 150 phones don't reconnect in lock-step
-    backoff = Math.min(backoff * 1.6, 15000);
+    backoff = Math.min(backoff * 1.6, 6000); // rejoin quickly; the voter id stays in localStorage
   };
 }
 setInterval(() => ws && ws.readyState === 1 && ws.send("ping"), 25000);
@@ -576,6 +737,7 @@ $("#langBtn").addEventListener("click", () => {
     app.innerHTML = `<div class="v-wait"><p class="v-big">Can't reach the game</p><p class="v-sub">Check your Wi-Fi or mobile data and reload.</p></div>`;
     return;
   }
+  ER = expandRoute(en);
   content = localize(en, null);
   if (!lang) languagePicker();
   else await applyLanguage();
@@ -583,4 +745,4 @@ $("#langBtn").addEventListener("click", () => {
   connect();
 })();
 
-window.__vote = { get state() { return state; }, get lang() { return lang; } };
+window.__vote = { get state() { return state; }, get lang() { return lang; }, dropConnection: () => ws?.close() }; // dropConnection: for the reconnect test

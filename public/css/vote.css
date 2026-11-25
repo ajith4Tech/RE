@@ -23,7 +23,7 @@ body.voter::after { content: ""; position: fixed; inset: 0; background-image: va
 /* headings + persona */
 .v-kicker { font: 800 15px var(--sign); letter-spacing: .1em; text-transform: uppercase; color: #8C3520; }
 .v-tag { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; background: var(--chalk); border: 3px solid var(--ink); padding: 8px 12px 8px 10px; margin: 8px 0; }
-.v-tag .pic { border: 2px solid var(--ink); line-height: 0; }
+.v-tag .pic { line-height: 0; }
 .v-tag b { font: 800 22px/1 var(--sign); text-transform: uppercase; display: block; }
 .v-tag span { font: 400 15px/1.3 var(--body); }
 .v-shift { display: inline-block; background: var(--yellow); border: 3px solid var(--ink); padding: 4px 10px; font: 700 17px/1.3 var(--sign); margin: 4px 0 8px; }
@@ -32,15 +32,25 @@ body.voter::after { content: ""; position: fixed; inset: 0; background-image: va
 .v-q { background: var(--green); color: var(--chalk); padding: 14px 16px; box-shadow: inset 0 0 0 3px var(--green), inset 0 0 0 6px var(--chalk); font: 700 22px/1.3 var(--body); margin: 8px 0 12px; }
 .v-help { font: 700 16px var(--body); color: var(--ink-2); margin: 0 0 10px; }
 
-/* options as direction signs */
-.v-opts { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; border: 0; }
-.v-opt { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 10px 38px 10px 10px; text-align: start; background: var(--green); color: var(--chalk); border: 0; box-shadow: inset 0 0 0 3px var(--chalk); clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 50%, calc(100% - 22px) 100%, 0 100%); font: 700 18px/1.3 var(--body); cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-[dir="rtl"] .v-opt { clip-path: polygon(22px 0, 100% 0, 100% 100%, 22px 100%, 0 50%); padding: 10px 10px 10px 38px; }
-.v-opt .l { width: 40px; height: 40px; border-radius: 50%; background: var(--chalk); color: var(--ink); display: grid; place-items: center; font: 800 22px var(--sign); }
-.v-opt[aria-pressed="true"], .v-opt[aria-checked="true"], .v-opt.mine { background: var(--yellow); color: var(--ink); box-shadow: inset 0 0 0 3px var(--ink); }
-.v-opt[aria-pressed="true"] .l, .v-opt[aria-checked="true"] .l, .v-opt.mine .l { background: var(--ink); color: var(--yellow); }
-.v-opt:disabled { cursor: default; opacity: 1; }
-.v-opt .tick { font: 800 14px var(--sign); text-transform: uppercase; letter-spacing: .06em; }
+/* options as sign-style buttons: chalk sign, yellow route circle, arrow. Picked = green + check. */
+.v-opts { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; border: 0; position: relative; }
+.v-opt { position: relative; z-index: 1; display: grid; grid-template-columns: 44px minmax(0, 1fr) 28px; gap: 12px; align-items: center; width: 100%; min-height: 64px; padding: 10px 12px 10px 10px; text-align: start; background: var(--chalk); color: var(--ink); border: 3px solid var(--ink); border-radius: 10px; box-shadow: 0 4px 0 rgba(26,26,26,.3); font: 800 21px/1.2 var(--sign); cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.v-opt .t { min-width: 0; overflow-wrap: anywhere; }
+.v-opt .l { width: 44px; height: 44px; border-radius: 50%; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); display: grid; place-items: center; font: 800 22px var(--sign); }
+.v-opt .ar svg { width: 28px; height: 19px; display: block; }
+[dir="rtl"] .v-opt .ar svg { transform: scaleX(-1); }
+.v-opt:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgba(26,26,26,.3); }
+.v-opt.mine, .v-opt[aria-checked="true"] { background: var(--green); color: var(--chalk); }
+.v-opt:disabled { cursor: default; }
+.v-opt:disabled:not(.mine) { opacity: .55; box-shadow: none; }
+/* tapstep: milestones on a road */
+.v-milestones::before { content: ""; position: absolute; inset-inline-start: 29px; top: 14px; bottom: 14px; width: 8px; background: var(--ink); }
+.v-milestones .v-opt .l { border-radius: 22px 22px 4px 4px; height: 48px; }
+/* pickn: signboard chips */
+.v-chips .v-opt { grid-template-columns: 44px minmax(0, 1fr); border-radius: 34px; padding-inline-end: 20px; }
+/* locked after voting */
+.v-note.v-locked { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font: 800 21px/1.3 var(--sign); text-transform: uppercase; letter-spacing: .03em; }
+.v-note.v-locked span { font: 700 16px/1.4 var(--body); text-transform: none; letter-spacing: 0; }
 
 /* native radio groups (match, viewpoint polls) */
 fieldset.v-group { border: 3px solid var(--ink); background: var(--chalk); padding: 8px 12px 12px; margin: 0 0 12px; }
@@ -53,6 +63,19 @@ fieldset.v-group legend { font: 700 18px/1.35 var(--body); padding: 0 6px; backg
 .v-radio input:checked + label { background: var(--yellow); }
 .v-radio input:checked + label::before { background: var(--ink); box-shadow: inset 0 0 0 4px var(--yellow); }
 .v-radio input:focus-visible + label { outline: 4px solid var(--ink); outline-offset: 2px; }
+.v-radio label .t { min-width: 0; overflow-wrap: anywhere; }
+/* viewpoint polls: sign buttons */
+.signs .v-radio label { min-height: 64px; background: var(--chalk); border-radius: 10px; font: 800 20px/1.2 var(--sign); }
+.signs .v-radio input:checked + label, .lanes .v-radio input:checked + label { background: var(--green); color: var(--chalk); }
+.signs .v-radio input:checked + label::before, .lanes .v-radio input:checked + label::before { content: "✓"; display: grid; place-items: center; background: var(--yellow); color: var(--ink); box-shadow: none; font: 800 15px/1 var(--sign); }
+/* match: each bucket is a road lane */
+.lanes .v-radios { gap: 0; border-inline-start: 6px solid var(--yellow); border-inline-end: 6px solid var(--chalk); background: var(--ink); }
+.lanes .v-radio label { min-height: 64px; background: var(--ink); color: var(--chalk); border: 0; border-bottom: 3px dashed rgba(245,241,230,.6); font: 800 20px/1.2 var(--sign); }
+.lanes .v-radio:last-child label { border-bottom: 0; }
+.lanes .v-radio label::before { border-color: var(--chalk); background: transparent; }
+.lanes .v-radio input:focus-visible + label { outline: 4px solid var(--yellow); outline-offset: -4px; }
+fieldset.v-group:disabled .v-radio label { cursor: default; }
+fieldset.v-group:disabled .v-radio input:not(:checked) + label { opacity: .55; }
 
 /* checkpoint pipeline (vertical on phones) */
 .v-pipe { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: stretch; }
@@ -60,14 +83,35 @@ fieldset.v-group legend { font: 700 18px/1.35 var(--body); padding: 0 6px; backg
 .v-pipe .st small { font: 800 13px var(--sign); letter-spacing: .1em; display: block; color: var(--yellow); }
 .v-gap { display: flex; align-items: center; justify-content: center; padding: 6px 0; position: relative; }
 .v-gap::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 4px dashed var(--ink); }
-.v-gap button { position: relative; min-height: 48px; padding: 8px 14px; background: var(--chalk); border: 3px solid var(--ink); font: 700 16px/1.25 var(--body); cursor: pointer; max-width: 92%; }
-.v-gap button[aria-pressed="true"] { background: var(--yellow); }
+/* each gap is a toll barrier: tapping it lifts the boom */
+.v-gap button.v-toll { position: relative; display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; align-items: center; width: 92%; min-height: 64px; padding: 6px 12px 6px 8px; text-align: start; background: var(--chalk); color: var(--ink); border: 3px solid var(--ink); border-radius: 10px; box-shadow: 0 4px 0 rgba(26,26,26,.3); font: 700 16px/1.25 var(--body); cursor: pointer; }
+.v-toll .toll { width: 58px; height: auto; display: block; overflow: visible; }
+.v-toll .boom { transform-box: view-box; transform-origin: 17px 51px; }
+.v-toll.lifted { background: var(--green); color: var(--chalk); }
+.v-toll.lifted .boom { transform: rotate(-64deg); animation: lift .8s cubic-bezier(.3,1.3,.5,1); }
+@keyframes lift { from { transform: rotate(0); } }
+.v-toll:disabled { cursor: default; }
+.v-toll:disabled:not(.lifted) { opacity: .55; box-shadow: none; }
 
-/* rank */
-.v-ranked { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-direction: column; gap: 6px; }
-.v-ranked li { display: flex; align-items: center; gap: 10px; background: var(--ink); color: var(--chalk); padding: 8px 12px; font: 700 17px/1.3 var(--body); min-height: 48px; }
-.v-ranked .n { width: 32px; height: 32px; border-radius: 50%; background: var(--yellow); color: var(--ink); display: grid; place-items: center; font: 800 18px var(--sign); flex: none; }
-.v-ranked em { margin-inline-start: auto; font: 800 12px var(--sign); font-style: normal; letter-spacing: .06em; text-transform: uppercase; color: var(--yellow); }
+/* rank: placed items are stacked signs with a drag handle and arrow buttons */
+.v-ranked { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.v-ranked li { display: grid; grid-template-columns: 36px 32px minmax(0, 1fr) 48px 48px; gap: 6px; align-items: center; background: var(--chalk); color: var(--ink); border: 3px solid var(--ink); border-radius: 10px; box-shadow: 0 3px 0 rgba(26,26,26,.3); padding: 6px; min-height: 64px; font: 800 19px/1.2 var(--sign); }
+.v-ranked li.locked { grid-template-columns: 32px minmax(0, 1fr); padding: 8px 12px; }
+.v-ranked li.dragging { box-shadow: 0 0 0 4px var(--yellow), 0 8px 14px rgba(26,26,26,.3); position: relative; z-index: 2; }
+.v-ranked .t { min-width: 0; overflow-wrap: anywhere; }
+.v-ranked small { display: block; font: 800 12px var(--sign); letter-spacing: .06em; text-transform: uppercase; color: #8C3520; margin-top: 2px; }
+.v-ranked .n { width: 32px; height: 32px; border-radius: 50%; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); display: grid; place-items: center; font: 800 17px var(--sign); }
+.v-grip { width: 36px; min-height: 48px; padding: 0; border: 0; background: transparent; color: var(--ink); cursor: grab; touch-action: none; display: grid; place-items: center; }
+.v-move { width: 48px; height: 48px; padding: 0; border: 3px solid var(--ink); border-radius: 8px; background: var(--yellow); color: var(--ink); font: 800 18px var(--sign); cursor: pointer; }
+.v-move:disabled { background: #CFC8B8; color: #3D3A35; cursor: default; }
+
+/* dualcloud: two short text boxes, green (first part) and red (second part) */
+.v-part { background: var(--chalk); border: 3px solid var(--ink); border-inline-start: 12px solid var(--green); padding: 10px 12px; margin-bottom: 12px; }
+.v-part.red { border-inline-start-color: var(--red); }
+.v-part label { display: block; font: 700 17px/1.4 var(--body); margin-bottom: 8px; }
+.v-ptag { display: inline-block; font: 800 14px/1 var(--sign); letter-spacing: .12em; text-transform: uppercase; color: var(--chalk); background: var(--green); padding: 5px 8px 4px; margin-inline-end: 8px; vertical-align: 2px; }
+.red .v-ptag { background: var(--red); }
+.v-part input { width: 100%; font: 700 20px var(--body); padding: 10px 12px; min-height: 52px; border: 3px solid var(--ink); background: #fff; }
 
 /* sliders */
 .v-est { background: var(--chalk); border: 3px solid var(--ink); padding: 10px 12px; margin-bottom: 12px; }
@@ -133,5 +177,14 @@ fieldset.v-group legend { font: 700 18px/1.35 var(--body); padding: 0 6px; backg
 .v-ai { background: var(--chalk); border: 3px dashed var(--ink); padding: 8px 12px; font: 700 15px var(--body); margin-bottom: 10px; }
 
 /* Urdu + Ladakhi need taller lines */
-:lang(ur) .v-q, :lang(ur) .v-opt, :lang(ur) .v-help, :lang(ur) .v-scenario, :lang(ur) .v-note, :lang(ur) .v-reveal p, :lang(ur) legend, :lang(ur) .v-radio label { font-family: "RideUrdu", "Atkinson", serif; line-height: 2; }
+:lang(ur) .v-q, :lang(ur) .v-opt, :lang(ur) .v-part label, :lang(ur) .v-ranked li, :lang(ur) .v-toll, :lang(ur) .v-help, :lang(ur) .v-scenario, :lang(ur) .v-note, :lang(ur) .v-reveal p, :lang(ur) legend, :lang(ur) .v-radio label { font-family: "RideUrdu", "Atkinson", serif; line-height: 2; }
 :lang(lad) .v-q, :lang(lad) .v-opt, :lang(lad) .v-scenario { line-height: 1.7; }
+
+/* voice line, info cards */
+.v-tag .v-voice { grid-column: 1 / -1; display: block; font: italic 400 16px/1.4 var(--body); border-top: 2px dashed rgba(26,26,26,.35); padding-top: 6px; margin-top: 2px; }
+.v-tokens { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin: 4px 0 10px; }
+.v-tokens td { background: var(--chalk); border-top: 3px solid var(--ink); border-bottom: 3px solid var(--ink); padding: 8px 10px; font: 700 17px/1.3 var(--body); }
+.v-tokens td:first-child { border-inline-start: 3px solid var(--ink); }
+.v-tokens td.tok { background: var(--ink); color: var(--yellow); font: 800 17px var(--sign); letter-spacing: .04em; border-inline-end: 3px solid var(--ink); }
+.v-link { display: inline-flex; align-items: center; min-height: 48px; padding: 8px 14px; background: var(--green); color: var(--chalk); font: 800 17px var(--sign); text-decoration: none; border: 3px solid var(--ink); }
+:lang(ur) .v-voice { font-family: "RideUrdu", "Atkinson", serif; line-height: 2; font-style: normal; }
