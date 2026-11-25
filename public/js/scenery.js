@@ -1,7 +1,7 @@
 // The Ride — "The Highway" artwork. Flat, original SVG only: no maps, no logos, no brands.
 //   Band:      a horizontal road strip along the bottom of the projector, with
 //              regional landscape silhouettes (parallax), milestone stones and the bike.
-//   Portraits: flat persona portraits in one consistent style.
+//   Emblems:   neutral rubber-stamp persona badges (objects, never faces).
 //   Icons:     hand-painted pitstop motifs.
 export const PAL = { green: "#1F5A3D", yellow: "#F2C230", red: "#B5462B", chalk: "#F5F1E6", ink: "#1A1A1A", sky: "#DCCFB8" };
 const SIL = "#C3B496"; // far silhouettes (a darker dusty sky)
@@ -110,7 +110,7 @@ function milestone(x, label, km) {
   </g>`;
 }
 
-const PIT_COLORS = { petrol: PAL.red, landslide: PAL.yellow, viewpoint: PAL.green, mechanic: PAL.yellow, checkpost: PAL.red, chai: PAL.red };
+const PIT_COLORS = { info: PAL.green, petrol: PAL.red, landslide: PAL.yellow, viewpoint: PAL.green, mechanic: PAL.yellow, checkpost: PAL.red, chai: PAL.red };
 function pitMarker(x, type, label) {
   const c = PIT_COLORS[type] || PAL.red;
   const fg = c === PAL.yellow ? PAL.ink : PAL.chalk;
@@ -154,7 +154,9 @@ export const BIKE_SVG = `
   </g>`;
 
 // ------------------------------------------------------------------ band
-export function buildBand(svg, route, shortPlace) {
+// The bike lives in its own SVG layer above the band (bikeSvg), never inside the band's
+// clipped box, so the rider's head stays visible when the band collapses to its short height.
+export function buildBand(svg, route, shortPlace, bikeSvg) {
   seed = 11;
   const n = route.length;
   const worldW = X0 * 2 + SPACING * (n - 1) + 1920;
@@ -180,20 +182,22 @@ export function buildBand(svg, route, shortPlace) {
   ground += `<line x1="-2000" x2="${worldW + 2000}" y1="${ROAD_Y + 3}" y2="${ROAD_Y + 3}" stroke="${PAL.yellow}" stroke-width="3"/>`;
   let marks = "";
   route.forEach((r, k) => {
-    marks += r.kind === "pitstop" ? pitMarker(itemX(k), r.pitType, (r.stamp || "").toUpperCase()) : milestone(itemX(k), esc(shortPlace(r.place)).toUpperCase(), `${r.km} km`);
+    marks += r.kind === "card" ? pitMarker(itemX(k), "info", "INFO") : r.kind === "pitstop" ? pitMarker(itemX(k), r.pitType, (r.stamp || "").toUpperCase()) : milestone(itemX(k), esc(shortPlace(r.place)).toUpperCase(), `${r.km} km`);
   });
 
   svg.innerHTML = `
     <rect width="1920" height="${BAND_H}" fill="${PAL.sky}"/>
     <g id="farLayer">${far}</g>
     <g id="landLayer">${land}</g>
-    <g id="worldLayer">${ground}${marks}</g>
-    <g id="bikeLayer" transform="translate(${BIKE_SCREEN_X} ${ROAD_Y + 30})"><g id="bike">${BIKE_SVG}</g></g>`;
+    <g id="worldLayer">${ground}${marks}</g>`;
+  bikeSvg.setAttribute("viewBox", `0 0 1920 ${BAND_H}`);
+  bikeSvg.setAttribute("preserveAspectRatio", "xMidYMax meet");
+  bikeSvg.innerHTML = `<g id="bikeLayer" transform="translate(${BIKE_SCREEN_X} ${ROAD_Y + 30})"><g id="bike">${BIKE_SVG}</g></g>`;
 
   const farL = svg.querySelector("#farLayer");
   const landL = svg.querySelector("#landLayer");
   const worldL = svg.querySelector("#worldLayer");
-  const bike = svg.querySelector("#bike");
+  const bike = bikeSvg.querySelector("#bike");
   let current = 0;
 
   function place(worldBikeX) {
@@ -247,50 +251,110 @@ export function buildBand(svg, route, shortPlace) {
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-// ------------------------------------------------------------------ portraits (one flat style)
-export function portrait(p = {}, size = 200) {
-  if (p.group) {
-    const one = (x, s, skin, hair) =>
-      `<g transform="translate(${x} 0)"><path d="M${-40 * s} 200 q${40 * s} -${70 * s} ${80 * s} 0 z" fill="${hair === 1 ? PAL.green : hair === 2 ? PAL.red : PAL.yellow}"/><circle cx="0" cy="${200 - 92 * s}" r="${26 * s}" fill="${skin}"/><path d="M${-26 * s} ${200 - 96 * s} a${26 * s} ${26 * s} 0 0 1 ${52 * s} 0 q-${26 * s} -${12 * s} -${52 * s} 0z" fill="${PAL.ink}"/></g>`;
-    return `<svg viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-hidden="true"><rect width="200" height="200" fill="${PAL.sky}"/>${one(52, 0.95, "#8A5634", 1)}${one(148, 0.95, "#A8714A", 2)}${one(100, 1.15, "#6B4028", 3)}</svg>`;
+// ------------------------------------------------------------------ persona emblems (rubber stamps)
+// Neutral, object-based badges in the style of the travel-log stamps: a double ring, one flat
+// icon from the persona's work, one accent colour, a slight tilt and a rough inked edge.
+// No faces, no skin tones. Icons are drawn in a 200×200 box; "C" is the ink colour, "P" the paper.
+const EMBLEM_ICONS = {
+  book: (C) => `<path d="M100 72 C86 62 64 60 46 66 V136 C64 130 86 132 100 142 C114 132 136 130 154 136 V66 C136 60 114 62 100 72 Z" stroke-width="7"/>
+    <path d="M100 72 V142" stroke-width="5"/>
+    <path d="M58 86 C68 82 80 82 90 86 M58 102 C68 98 80 98 90 102 M58 118 C68 114 80 114 90 118 M110 86 C120 82 132 82 142 86 M110 102 C120 98 132 98 142 102 M110 118 C120 114 132 114 142 118" stroke-width="4"/>`,
+  wheat: (C) => `<path d="M100 160 V56" stroke-width="6"/>
+    ${[70, 92, 114].map((y) => `<ellipse cx="87" cy="${y}" rx="9" ry="16" transform="rotate(-38 87 ${y})" fill="${C}" stroke="none"/><ellipse cx="113" cy="${y}" rx="9" ry="16" transform="rotate(38 113 ${y})" fill="${C}" stroke="none"/>`).join("")}
+    <ellipse cx="100" cy="48" rx="8" ry="15" fill="${C}" stroke="none"/>
+    <path d="M100 148 q-28 -4 -38 -28 q24 0 38 20 z" fill="${C}" stroke="none"/>`,
+  envelope: (C, P) => `<rect x="44" y="64" width="112" height="76" rx="6" stroke-width="7"/>
+    <path d="M47 68 L100 110 L153 68" stroke-width="6"/>
+    <circle cx="100" cy="112" r="20" fill="${C}" stroke="none"/>
+    <path d="M100 123 c-11 -7 -15 -11 -15 -16.5 a6.6 6.6 0 0 1 15 -2.5 a6.6 6.6 0 0 1 15 2.5 c0 5.5 -4 9.5 -15 16.5z" fill="${P}" stroke="none"/>`,
+  speech: (C) => `<path d="M58 56 H142 a14 14 0 0 1 14 14 V114 a14 14 0 0 1 -14 14 H96 L68 152 V128 H58 a14 14 0 0 1 -14 -14 V70 a14 14 0 0 1 14 -14 Z" stroke-width="7"/>
+    ${[[72, 14], [86, 32], [100, 46], [114, 28], [128, 14]].map(([x, h]) => `<path d="M${x} ${92 - h / 2} V${92 + h / 2}" stroke-width="7"/>`).join("")}`,
+  pugmark: (C) => `<g fill="${C}" stroke="none"><path d="M100 104 c-22 0 -42 18 -42 34 c0 14 14 19 23 14 c8 -4 12 -6 19 -6 c7 0 11 2 19 6 c9 5 23 0 23 -14 c0 -16 -20 -34 -42 -34z"/>
+    <ellipse cx="64" cy="92" rx="11" ry="15" transform="rotate(-28 64 92)"/><ellipse cx="87" cy="68" rx="11" ry="16" transform="rotate(-8 87 68)"/>
+    <ellipse cx="113" cy="68" rx="11" ry="16" transform="rotate(8 113 68)"/><ellipse cx="136" cy="92" rx="11" ry="15" transform="rotate(28 136 92)"/></g>`,
+  stethoscope: (C) => `<path d="M70 48 V80 a30 30 0 0 0 60 0 V48" stroke-width="7"/>
+    <circle cx="70" cy="45" r="7" fill="${C}" stroke="none"/><circle cx="130" cy="45" r="7" fill="${C}" stroke="none"/>
+    <path d="M100 110 V124 a24 24 0 0 0 48 0 V116" stroke-width="7"/>
+    <circle cx="148" cy="102" r="15" stroke-width="7"/><circle cx="148" cy="102" r="5" fill="${C}" stroke="none"/>`,
+  tools: (C, P) => `<g transform="rotate(45 100 100)"><rect x="93" y="62" width="14" height="86" rx="5" fill="${C}" stroke="none"/>
+      <circle cx="100" cy="56" r="22" fill="${C}" stroke="none"/><rect x="92" y="30" width="16" height="26" fill="${P}" stroke="none"/>
+      <circle cx="100" cy="146" r="6" fill="${P}" stroke="none"/></g>
+    <g transform="rotate(-45 100 100)"><path d="M90 46 H110 V132 L100 156 L90 132 Z" fill="${P}" stroke-width="6"/>
+      <path d="M90 60 H110 M90 132 H110" stroke-width="5"/><path d="M96 146 L100 156 L104 146 Z" fill="${C}" stroke="none"/></g>`,
+  hands: (C, P) => `<path d="M30 92 H52 V132 H30 Z M148 92 H170 V132 H148 Z" fill="${C}" stroke="none"/>
+    <path d="M52 98 L82 84 q8 -3 15 1 L124 102" stroke-width="7"/>
+    <path d="M148 98 L120 88 q-8 -3 -15 2 L86 104 q-8 6 -2 12 q6 5 13 0 l12 -8" stroke-width="7"/>
+    <path d="M52 126 L74 132 q8 2 13 -3 l5 -4 M70 134 q8 6 15 1 l8 -6 M86 138 q8 5 14 0 l12 -9 M148 126 l-20 -16 q-6 -5 -12 0 l-10 8 q-6 6 0 11 q6 4 12 -1" stroke-width="6"/>`,
+  needle: (C, P) => `<path d="M130 64 C166 52 172 102 132 114 C96 126 50 114 50 142 C50 160 76 166 94 154" stroke-width="5"/>
+    <g transform="rotate(40 100 100)"><rect x="93" y="36" width="14" height="116" rx="7" fill="${C}" stroke="none"/>
+      <path d="M93 148 L100 174 L107 148 Z" fill="${C}" stroke="none"/><ellipse cx="100" cy="54" rx="3.5" ry="10" fill="${P}" stroke="none"/></g>`,
+  milestones: (C, P) => {
+    const ms = (x, base, w, h) => `<path d="M${x - w / 2} ${base} V${base - h + w / 2} a${w / 2} ${w / 2} 0 0 1 ${w} 0 V${base} Z" fill="${P}" stroke-width="6"/>
+      <path d="M${x - w / 2} ${base - h + w / 2} a${w / 2} ${w / 2} 0 0 1 ${w} 0 Z" fill="${C}" stroke-width="6"/>
+      <path d="M${x - w / 4} ${base - h * 0.32} H${x + w / 4}" stroke-width="4"/>`;
+    return `${ms(54, 150, 34, 54)}${ms(146, 150, 34, 54)}${ms(100, 150, 42, 82)}<path d="M30 152 H170" stroke-width="6"/>`;
+  },
+  compass: (C, P) => `<circle cx="100" cy="100" r="58" stroke-width="7"/>
+    ${[0, 90, 180, 270].map((a) => `<path d="M100 48 V58" stroke-width="6" transform="rotate(${a} 100 100)"/>`).join("")}
+    <path d="M100 62 L114 100 L100 138 L86 100 Z" fill="${C}" stroke="none" transform="rotate(35 100 100)"/>
+    <path d="M100 100 L114 100 L100 138 L86 100 Z" fill="${P}" stroke-width="4" transform="rotate(35 100 100)"/>
+    <circle cx="100" cy="100" r="6" fill="${C}" stroke="none"/>`,
+  binoculars: (C, P) => `<path d="M62 64 H86 V96 M138 64 H114 V96" stroke-width="7"/>
+    <rect x="86" y="80" width="28" height="22" rx="4" fill="${C}" stroke="none"/>
+    <circle cx="68" cy="124" r="28" stroke-width="7"/><circle cx="132" cy="124" r="28" stroke-width="7"/>
+    <path d="M44 120 L56 70 H80 L94 110 M156 120 L144 70 H120 L106 110" stroke-width="7"/>
+    <circle cx="68" cy="124" r="11" fill="${C}" stroke="none"/><circle cx="132" cy="124" r="11" fill="${C}" stroke="none"/>`,
+  padlock: (C, P) => `<path d="M70 94 V72 a30 30 0 0 1 60 0 V94" stroke-width="9"/>
+    <rect x="52" y="92" width="96" height="74" rx="10" fill="${C}" stroke="none"/>
+    <circle cx="100" cy="122" r="10" fill="${P}" stroke="none"/><path d="M100 128 V146" stroke="${P}" stroke-width="8"/>`,
+  wrench: (C, P) => `<g transform="rotate(45 100 100)"><rect x="92" y="70" width="16" height="96" rx="6" fill="${C}" stroke="none"/>
+      <circle cx="100" cy="58" r="26" fill="${C}" stroke="none"/><rect x="91" y="26" width="18" height="30" fill="${P}" stroke="none"/>
+      <circle cx="100" cy="156" r="6" fill="${P}" stroke="none"/></g>`,
+  braille: (C) => `<rect x="58" y="44" width="84" height="112" rx="14" stroke-width="7"/>
+    ${[[82, 74, 1], [118, 74, 0], [82, 100, 1], [118, 100, 1], [82, 126, 0], [118, 126, 1]].map(([x, y, f]) => `<circle cx="${x}" cy="${y}" r="9" ${f ? `fill="${C}" stroke="none"` : `stroke-width="4"`}/>`).join("")}`,
+  microphone: (C) => `<rect x="80" y="38" width="40" height="68" rx="20" stroke-width="7"/>
+    <path d="M86 60 H114 M86 74 H114 M86 88 H114" stroke-width="4"/>
+    <path d="M64 90 a36 36 0 0 0 72 0" stroke-width="7"/><path d="M100 126 V150 M76 152 H124" stroke-width="7"/>`,
+};
+export const EMBLEM_NAMES = Object.keys(EMBLEM_ICONS);
+const EMBLEM_INK = { green: PAL.green, red: PAL.red, ink: PAL.ink, yellow: PAL.ink };
+let emblemSeq = 0;
+
+/** A round rubber-stamp badge: { icon, color: green|red|yellow|ink }. `key` seeds the tilt (−3°…3°).
+ *  { group: [badge, …] } draws several badges side by side (e.g. "Everyone from the road"). */
+export function emblem(e = {}, size = 200, key = "") {
+  if (Array.isArray(e.group)) {
+    const n = e.group.length;
+    const each = Math.round(size / Math.min(n, 2)) - 2;
+    return `<span class="emblem-group" style="display:grid;grid-template-columns:repeat(${Math.min(n, 2)},${each}px);gap:2px;width:${size}px">${e.group.map((g, k) => emblem(g, each, `${key}${k}`)).join("")}</span>`;
   }
-  const skin = p.skin || "#8A5634";
-  const hc = p.hairColor || PAL.ink;
-  const top = p.top || PAL.green;
-  let back = "";
-  let front = "";
-  switch (p.hair) {
-    case "long": back = `<path d="M58 92 q-6 70 10 92 h64 q16 -22 10 -92 q-42 -40 -84 0z" fill="${hc}"/>`; front = `<path d="M60 86 q40 -46 80 0 q-14 -14 -40 -12 q-26 -2 -40 12z" fill="${hc}"/>`; break;
-    case "covered": back = `<path d="M50 96 q0 -70 50 -70 q50 0 50 70 v70 h-100z" fill="${hc}"/>`; front = `<path d="M56 98 q4 -58 44 -58 q40 0 44 58 q-10 -30 -44 -34 q-34 4 -44 34z" fill="${hc}"/>`; break;
-    case "dupatta": back = `<path d="M52 92 q4 -62 48 -62 q44 0 48 62 l10 90 h-116z" fill="${hc}"/>`; front = `<path d="M60 84 q40 -40 80 0 q-16 -10 -40 -10 q-24 0 -40 10z" fill="${PAL.ink}"/>`; break;
-    case "bun": back = `<circle cx="100" cy="42" r="18" fill="${hc}"/>`; front = `<path d="M62 88 q38 -50 76 0 q-12 -16 -38 -16 q-26 0 -38 16z" fill="${hc}"/>`; break;
-    case "cap": front = `<path d="M62 78 q38 -40 76 0 z" fill="${PAL.green}"/><rect x="118" y="72" width="40" height="8" rx="4" fill="${PAL.green}"/>`; break;
-    case "curly": front = `${[66, 80, 94, 108, 122, 134].map((x, k) => `<circle cx="${x}" cy="${70 - (k % 2) * 6}" r="13" fill="${hc}"/>`).join("")}`; break;
-    case "bald": front = `<path d="M62 96 q-2 -14 6 -20 M138 96 q2 -14 -6 -20" stroke="${hc}" stroke-width="8" stroke-linecap="round"/>`; break;
-    default: front = `<path d="M62 86 q38 -48 76 0 q-10 -10 -38 -12 q-28 2 -38 12z" fill="${hc}"/>`;
-  }
-  const ex = p.extra || "";
-  let extra = "";
-  if (ex.includes("glasses")) extra += `<g fill="none" stroke="${PAL.ink}" stroke-width="4"><circle cx="86" cy="102" r="11"/><circle cx="114" cy="102" r="11"/><path d="M97 102h6"/></g>`;
-  if (ex.includes("beard")) extra += `<path d="M70 110 q30 56 60 0 q-6 26 -30 28 q-24 -2 -30 -28z" fill="${hc}"/>`;
-  if (ex === "moustache" || ex.includes("white-moustache")) extra += `<path d="M86 124 q14 -8 28 0 q-14 4 -28 0z" fill="${ex.includes("white") ? "#E8E2D4" : PAL.ink}"/>`;
-  if (ex === "stubble") extra += `<path d="M72 116 q28 40 56 0" fill="none" stroke="${PAL.ink}" stroke-width="6" opacity=".35"/>`;
-  if (ex === "earrings") extra += `<circle cx="64" cy="118" r="5" fill="${PAL.yellow}"/><circle cx="136" cy="118" r="5" fill="${PAL.yellow}"/>`;
-  if (ex === "bindi") extra += `<circle cx="100" cy="86" r="4" fill="${PAL.red}"/>`;
-  if (ex === "nosering") extra += `<circle cx="108" cy="116" r="5" fill="none" stroke="${PAL.yellow}" stroke-width="2.5"/>`;
-  const eyes = ex.includes("glasses") ? `<circle cx="86" cy="102" r="3" fill="${PAL.ink}"/><circle cx="114" cy="102" r="3" fill="${PAL.ink}"/>` : `<circle cx="86" cy="102" r="4" fill="${PAL.ink}"/><circle cx="114" cy="102" r="4" fill="${PAL.ink}"/>`;
-  return `<svg viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-hidden="true">
-    <rect width="200" height="200" fill="${PAL.sky}"/>${back}
-    <path d="M36 200 q8 -52 64 -54 q56 2 64 54z" fill="${top}"/>
-    <rect x="88" y="128" width="24" height="24" fill="${skin}"/>
-    <ellipse cx="100" cy="102" rx="38" ry="44" fill="${skin}"/>
-    <ellipse cx="62" cy="106" rx="6" ry="9" fill="${skin}"/><ellipse cx="138" cy="106" rx="6" ry="9" fill="${skin}"/>
-    ${front}${eyes}<path d="M90 128 q10 8 20 0" fill="none" stroke="${PAL.ink}" stroke-width="3" stroke-linecap="round"/>${extra}
-  </svg>`;
+  const icon = EMBLEM_ICONS[e.icon] || EMBLEM_ICONS.milestones;
+  const C = EMBLEM_INK[e.color] || PAL.green;
+  const P = e.color === "yellow" ? PAL.yellow : PAL.chalk;
+  let h = 7;
+  for (const ch of String(key || e.icon)) h = (h * 31 + ch.charCodeAt(0)) % 9973;
+  const rot = ((h % 61) - 30) / 10;
+  const id = `ink${++emblemSeq}`;
+  return `<svg class="emblem" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-hidden="true" focusable="false">
+    <defs><filter id="${id}" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="${h % 97}" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="1" seed="${(h % 89) + 3}" result="s"/>
+      <feColorMatrix in="s" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -4 0 0 0 3.3" result="m"/>
+      <feComposite in="rough" in2="m" operator="in"/></filter></defs>
+    <circle cx="100" cy="100" r="96" fill="${P}"/>
+    ${e.color === "yellow" ? "" : `<circle cx="100" cy="100" r="92" fill="${C}" opacity=".07"/>`}
+    <g transform="rotate(${rot} 100 100)" filter="url(#${id})">
+      <circle cx="100" cy="100" r="90" fill="none" stroke="${C}" stroke-width="7"/>
+      <circle cx="100" cy="100" r="78" fill="none" stroke="${C}" stroke-width="2.5"/>
+      <circle cx="16" cy="100" r="3" fill="${C}"/><circle cx="184" cy="100" r="3" fill="${C}"/>
+      <g transform="translate(100 100) scale(.84) translate(-100 -100)" fill="none" stroke="${C}" stroke-linecap="round" stroke-linejoin="round">${icon(C, P)}</g>
+    </g></svg>`;
 }
 
 // ------------------------------------------------------------------ hand-painted pitstop motifs
 export const PIT_ICONS = {
+  info: `<svg viewBox="0 0 120 150" aria-hidden="true"><rect x="10" y="8" width="100" height="100" rx="12" fill="${PAL.green}" stroke="${PAL.ink}" stroke-width="6"/><rect x="18" y="16" width="84" height="84" rx="7" fill="none" stroke="${PAL.chalk}" stroke-width="4"/><circle cx="60" cy="38" r="9" fill="${PAL.chalk}"/><rect x="51" y="52" width="18" height="38" rx="3" fill="${PAL.chalk}"/><rect x="54" y="108" width="12" height="40" fill="${PAL.ink}"/></svg>`,
   petrol: `<svg viewBox="0 0 120 140" aria-hidden="true"><rect x="20" y="20" width="60" height="110" rx="6" fill="${PAL.red}" stroke="${PAL.ink}" stroke-width="5"/><rect x="30" y="32" width="40" height="28" fill="${PAL.chalk}" stroke="${PAL.ink}" stroke-width="4"/><text x="50" y="53" text-anchor="middle" font-family="Signage" font-weight="800" font-size="18" fill="${PAL.ink}">00.0</text><path d="M80 50 h14 q10 0 10 10 v50 q0 8 -8 8" fill="none" stroke="${PAL.ink}" stroke-width="6" stroke-linecap="round"/><rect x="14" y="126" width="72" height="10" fill="${PAL.ink}"/></svg>`,
   landslide: `<svg viewBox="0 0 140 120" aria-hidden="true"><path d="M70 8 L132 112 H8 Z" fill="${PAL.yellow}" stroke="${PAL.ink}" stroke-width="6" stroke-linejoin="round"/><circle cx="58" cy="86" r="12" fill="${PAL.ink}"/><circle cx="80" cy="92" r="9" fill="${PAL.ink}"/><circle cx="70" cy="66" r="9" fill="${PAL.ink}"/><path d="M30 104 H110" stroke="${PAL.ink}" stroke-width="5"/></svg>`,
   viewpoint: `<svg viewBox="0 0 140 110" aria-hidden="true"><rect x="16" y="30" width="44" height="60" rx="18" fill="${PAL.ink}"/><rect x="80" y="30" width="44" height="60" rx="18" fill="${PAL.ink}"/><rect x="54" y="42" width="32" height="20" fill="${PAL.ink}"/><circle cx="38" cy="78" r="12" fill="${PAL.chalk}"/><circle cx="102" cy="78" r="12" fill="${PAL.chalk}"/></svg>`,
