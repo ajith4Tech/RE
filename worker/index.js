@@ -1,25 +1,25 @@
 // The Ride — Cloudflare Worker + Durable Object backend for Live Vote mode.
 //
 // The Durable Object holds only:
-//   - the current slot ("<route index>" or "<route index>.<sub>") and phase
-//   - vote tallies per slot, by option id (never by translated text)
-//   - word-cloud answers (pending / approved / rejected by the moderator), each tied to its question
-//   - how many phones use each language, the discussion timer, a random round id
-//   - anonymous random voter ids, to allow one vote per phone (wiped on reset)
+//   - the current slot (the step id on screen, e.g. "q3") and phase
+//   - vote tallies per step, by option id
+//   - word-cloud answers (pending / approved / rejected by the moderator), each tied to its step
+//   - the discussion timer, the voting countdown and a random round id
+//   - the last command the moderator view sent to the projector (relayed, then forgotten)
+//   - anonymous random voter ids, to allow one vote per phone per step (wiped on reset)
 // No names, no IP addresses, no personal data.
-import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { z } from "zod";
-import { partStrings } from "../public/js/i18n.js";
 import { isProfane } from "../public/js/profanity.js";
 
-const PHASES = ["idle", "arrive", "open", "closed", "reveal", "info", "end"];
-// Slots are named by step id: "q3", "p4.1" (a viewpoint showcase or checkpost round), "q1.m" (mirror poll)
-const SLOT_RE = /^[A-Za-z0-9_-]{1,16}(\.[A-Za-z0-9_-]{1,12})?$/;
+// idle = lobby, arrive = arriving at a stop, show = a screen without a vote, open / closed = voting,
+// reveal = Stop 1's answer on screen
+const PHASES = ["idle", "arrive", "show", "open", "closed", "reveal"];
+const SLOT_RE = /^[A-Za-z0-9_-]{1,24}$/; // slots are step ids
 const ID_RE = /^[A-Za-z0-9_-]{1,24}$/;
-const LANG_RE = /^[a-z]{2,3}$|^other:[\p{L}\p{M} ()'-]{1,40}$/u;
 const MAX_WORDS = 600;
 const WORDS_PER_PHONE = 3;
+// Commands the moderator view can send to the projector (the projector does the work)
+const COMMANDS = ["next", "back", "closeVote", "pause", "extend", "addWord", "key", "timer", "mode", "returnLive", "mute", "reset"];
+const KEY_RE = /^[A-Da-d0-9]$/;
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -34,50 +34,32 @@ const json = (data, status = 200) =>
   });
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return json({ ok: true });
     if (url.pathname === "/v" || url.pathname === "/v/") return env.ASSETS.fetch(new URL("/vote", url));
     if (url.pathname === "/moderator/") return Response.redirect(new URL("/moderator", url), 301);
-    if (url.pathname === "/api/translate" && request.method === "POST") return translate(request, env, ctx);
     if (url.pathname.startsWith("/api/")) return env.GAME.get(env.GAME.idFromName("main")).fetch(request);
     return env.ASSETS.fetch(request);
   },
 };
 
 // ------------------------------------------------------------------ validation
-/** Accepts: "id" | ["id", …] | { key: "id", … } | { key: number, … } */
+/** Accepts one option id ("B"), or a list of distinct ids for pick-n (["owner", "fixer", "data"]). */
 function validAnswer(a) {
   if (typeof a === "string") return ID_RE.test(a);
-  if (Array.isArray(a)) return a.length <= 10 && new Set(a).size === a.length && a.every((x) => typeof x === "string" && ID_RE.test(x));
-  if (a && typeof a === "object") {
-    const entries = Object.entries(a);
-    if (!entries.length || entries.length > 10 || !entries.every(([k]) => ID_RE.test(k))) return false;
-    if (entries.every(([, v]) => typeof v === "string" && ID_RE.test(v))) return true;
-    return entries.every(([, v]) => typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1e8);
-  }
+  if (Array.isArray(a)) return a.length >= 1 && a.length <= 10 && new Set(a).size === a.length && a.every((x) => typeof x === "string" && ID_RE.test(x));
   return false;
 }
 
 function addToTally(t, a) {
   t.n += 1;
-  if (typeof a === "string") t.counts[a] = (t.counts[a] || 0) + 1;
-  else if (Array.isArray(a)) {
-    a.forEach((id, i) => {
-      t.counts[id] = (t.counts[id] || 0) + 1;
-      t.pos[id] = (t.pos[id] || 0) + i + 1; // rank: average position = pos / counts
-    });
-  } else {
-    for (const [k, v] of Object.entries(a)) {
-      if (typeof v === "number") (t.nums[k] = t.nums[k] || []).length < 2000 && t.nums[k].push(v);
-      else t.counts[`${k}:${v}`] = (t.counts[`${k}:${v}`] || 0) + 1; // match / multi-poll: "item:bucket"
-    }
-  }
+  for (const id of Array.isArray(a) ? a : [a]) t.counts[id] = (t.counts[id] || 0) + 1;
 }
 
-const emptyTally = () => ({ n: 0, counts: {}, pos: {}, nums: {} });
+const emptyTally = () => ({ n: 0, counts: {} });
 const newRound = () => Math.random().toString(36).slice(2, 8);
-const freshState = () => ({ slot: "intro", phase: "idle", round: newRound(), tallies: {}, langs: {}, words: [], wordSeq: 0, timer: { duration: 60, endsAt: null } });
+const freshState = () => ({ slot: "intro", phase: "idle", round: newRound(), tallies: {}, words: [], wordSeq: 0, timer: { duration: 60, endsAt: null } });
 
 // ------------------------------------------------------------------ Durable Object
 export class Game {
@@ -86,10 +68,21 @@ export class Game {
     this.env = env;
     this.state = null;
     this.broadcastTimer = null;
+    this.voterTimer = null;
+    this.lastVoterSend = 0;
+    this.cmd = null; // the last relayed moderator command (memory only)
     ctx.blockConcurrencyWhile(async () => {
       const saved = await ctx.storage.get("state");
       this.state = saved && saved.slot !== undefined ? { ...freshState(), ...saved } : freshState();
     });
+  }
+
+  /** The voting countdown for the step on screen (the projector is the clock; it sends its state with each step). */
+  voteView() {
+    const v = this.state.vote;
+    if (!v || v.slot !== this.state.slot) return null;
+    const remainingMs = v.locked ? 0 : v.paused || !v.endsAt ? v.left : Math.max(0, v.endsAt - Date.now());
+    return { duration: v.duration, remainingMs, paused: !!v.paused, locked: !!v.locked, running: !!v.endsAt && !v.paused && !v.locked };
   }
 
   timerView() {
@@ -109,10 +102,9 @@ export class Game {
     return Object.values(agg);
   }
 
-  /** Word-cloud entries for the question on screen. More than one question can be a word cloud (Q2, Q11). */
+  /** Word-cloud entries for the step on screen (Q2 and Q7 are both clouds; each keeps its own). */
   wordsHere() {
-    const q = String(this.state.slot).split(".")[0];
-    return this.state.words.filter((w) => w.slot === q);
+    return this.state.words.filter((w) => w.slot === this.state.slot);
   }
 
   publicState(forPresenter) {
@@ -123,18 +115,16 @@ export class Game {
       phase: s.phase,
       round: s.round,
       n: tally.n,
-      languages: Object.keys(s.langs).filter((l) => s.langs[l] > 0).length,
       riders: this.ctx.getWebSockets("voter").length, // phones connected right now (the lobby's "riders joined")
       timer: this.timerView(),
+      vote: this.voteView(),
     };
-    if (forPresenter || ["closed", "reveal", "end"].includes(s.phase)) {
-      const { nums, ...rest } = tally;
-      out.tally = { ...rest, nums: summariseNums(nums) };
-    }
+    // Phones get the room's live result too, so after voting they see it fill as the big screen does
+    if (forPresenter || ["open", "closed", "reveal"].includes(s.phase)) out.tally = tally;
     if (forPresenter) {
-      out.langs = s.langs;
       out.words = this.approvedWords();
       out.pending = this.wordsHere().filter((w) => w.status === "pending").length;
+      if (this.cmd) out.cmd = { ...this.cmd, age: Date.now() - this.cmd.at };
     }
     return out;
   }
@@ -170,19 +160,9 @@ export class Game {
     return typeof v === "string" && v.length >= 8 && v.length <= 64 && /^[A-Za-z0-9_-]+$/.test(v);
   }
 
-  async noteLanguage(voter, lang) {
-    if (typeof lang !== "string" || !LANG_RE.test(lang)) return;
-    const s = this.state;
-    const key = `l:${s.round}:${voter}`;
-    const prev = await this.ctx.storage.get(key);
-    if (prev === lang) return;
-    if (prev && s.langs[prev]) s.langs[prev] -= 1;
-    s.langs[lang] = (s.langs[lang] || 0) + 1;
-    this.ctx.storage.put(key, lang);
-  }
 
   async vote(body) {
-    const { voter, slot, answer, lang } = body || {};
+    const { voter, slot, answer } = body || {};
     const s = this.state;
     if (!this.validVoter(voter)) return [{ error: "bad voter" }, 400];
     if (!validAnswer(answer)) return [{ error: "bad answer" }, 400];
@@ -191,7 +171,6 @@ export class Game {
     const previous = await this.ctx.storage.get(key);
     if (previous) return [{ ok: true, duplicate: true, answer: previous, state: this.publicState(false) }, 200];
     addToTally((s.tallies[s.slot] = s.tallies[s.slot] || emptyTally()), answer);
-    await this.noteLanguage(voter, lang);
     this.ctx.storage.put(key, answer);
     this.ctx.storage.put("state", s);
     this.scheduleBroadcast(false);
@@ -202,7 +181,7 @@ export class Game {
   // Two-part clouds (dualcloud) send { entries: [{ part, text }, …] }: one answer per part per phone,
   // all sent together, and each queued entry keeps its part so the moderator sees which cloud it is for.
   async word(body) {
-    const { voter, slot, lang } = body || {};
+    const { voter, slot } = body || {};
     const s = this.state;
     if (!this.validVoter(voter)) return [{ error: "bad voter" }, 400];
     const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
@@ -214,14 +193,13 @@ export class Game {
     if (slot !== s.slot || s.phase !== "open") return [{ ok: false, reason: "closed" }, 409];
     const rude = entries.find((e) => isProfane(e.text));
     if (rude) return [{ ok: false, reason: "rephrase", ...(dual ? { part: rude.part } : {}) }, 200];
-    // Limits and the "answers in" count are per question: a phone that answered Q2 counts again at Q11.
+    // Limits and the "answers in" count are per step: a phone that answered Q2 counts again at Q7.
     const here = this.wordsHere();
     const mine = here.filter((w) => w.voter === voter).length;
     if (dual ? entries.some((e) => here.some((w) => w.voter === voter && w.part === e.part)) : mine >= WORDS_PER_PHONE) return [{ ok: false, reason: "limit" }, 200];
     if (s.words.length + entries.length > MAX_WORDS) return [{ ok: false, reason: "full" }, 200];
     for (const e of entries)
-      s.words.push({ id: ++s.wordSeq, slot: s.slot.split(".")[0], text: e.text, key: e.text.toLowerCase(), status: "pending", voter, lang: typeof lang === "string" ? lang.slice(0, 48) : "", ...(e.part ? { part: e.part } : {}) });
-    await this.noteLanguage(voter, lang);
+      s.words.push({ id: ++s.wordSeq, slot: s.slot, text: e.text, key: e.text.toLowerCase(), status: "pending", voter, ...(e.part ? { part: e.part } : {}) });
     const t = (s.tallies[s.slot] = s.tallies[s.slot] || emptyTally());
     if (!mine) t.n += 1;
     this.ctx.storage.put("state", s);
@@ -255,14 +233,27 @@ export class Game {
         if (!SLOT_RE.test(slot)) return [{ error: "bad slot" }, 400];
         if (!PHASES.includes(body.phase)) return [{ error: "bad phase" }, 400];
         const changed = s.slot !== slot || s.phase !== body.phase;
-        // Moving on to another question: entries the moderator never handled are cleared ("expired"),
-        // so they can't turn up in a later word cloud's queue.
-        if (s.slot.split(".")[0] !== slot.split(".")[0]) for (const w of s.words) if (w.status === "pending" && w.slot !== slot.split(".")[0]) w.status = "expired";
-        if (s.slot.split(".")[0] !== slot.split(".")[0]) s.timer = { duration: s.timer?.duration || 60, endsAt: null };
+        // Moving on to another step: entries the moderator never handled are cleared ("expired"),
+        // so they can't turn up in a later word cloud's queue. The discussion timer stops too.
+        if (s.slot !== slot) {
+          for (const w of s.words) if (w.status === "pending" && w.slot !== slot) w.status = "expired";
+          s.timer = { duration: s.timer?.duration || 60, endsAt: null };
+        }
         s.slot = slot;
         s.phase = body.phase;
+        // The voting countdown, as the projector has it right now
+        const before = this.voteView();
+        const v = body.vote;
+        if (v && typeof v === "object") {
+          const left = Math.max(0, Math.min(900000, Number(v.remainingMs) || 0));
+          const duration = Math.max(1, Math.min(900, Number(v.duration) || 30));
+          s.vote = { slot, duration, left, paused: !!v.paused, locked: !!v.locked, endsAt: v.paused || v.locked ? null : Date.now() + left };
+        } else if (s.vote?.slot !== slot) s.vote = null;
+        const after = this.voteView();
+        // Phones hear about a countdown that started, paused, locked or jumped (extended); not about it ticking down
+        const voteChanged = !before !== !after || (!!after && (after.paused !== before.paused || after.locked !== before.locked || Math.abs(after.remainingMs - before.remainingMs) > 1500));
         await this.ctx.storage.put("state", s);
-        if (changed) this.scheduleBroadcast(true);
+        if (changed || voteChanged) this.scheduleBroadcast(true);
         return [{ ok: true, state: this.publicState(true) }, 200];
       }
       case "timer": {
@@ -271,6 +262,23 @@ export class Game {
         await this.ctx.storage.put("state", s);
         this.scheduleBroadcast(true);
         return [{ ok: true, state: this.publicState(true) }, 200];
+      }
+      case "command": {
+        // The moderator view (on a phone) drives the projector: relayed straight to it, run there once.
+        if (!COMMANDS.includes(body.cmd)) return [{ error: "bad command" }, 400];
+        if (body.cmd === "key" && !KEY_RE.test(String(body.key || ""))) return [{ error: "bad key" }, 400];
+        // Ids only ever grow (clock-based), even if this object restarts and forgets the last one
+        const c = { id: Math.max(Date.now(), (this.cmd?.id || 0) + 1), cmd: body.cmd, at: Date.now() };
+        if (body.arg != null) c.arg = Math.max(-600, Math.min(600, Number(body.arg) || 0));
+        if (body.cmd === "key") c.key = String(body.key);
+        if (body.cmd === "addWord") c.text = String(body.text || "").replace(/\s+/g, " ").trim().slice(0, 40);
+        this.cmd = c;
+        const msg = JSON.stringify({ type: "cmd", cmd: { ...c, age: 0 } });
+        let sent = 0;
+        for (const ws of this.ctx.getWebSockets("presenter")) {
+          try { ws.send(msg); sent++; } catch {}
+        }
+        return [{ ok: true, sent }, 200];
       }
       case "words": // the moderator queue: this question only
         return [{ ok: true, words: this.wordsHere().map(({ voter, ...w }) => w) }, 200];
@@ -286,7 +294,7 @@ export class Game {
         const text = String(body.text || "").replace(/\s+/g, " ").trim().slice(0, 40);
         if (!text) return [{ error: "empty" }, 400];
         const part = typeof body.part === "string" && ID_RE.test(body.part) ? body.part : null;
-        s.words.push({ id: ++s.wordSeq, slot: s.slot.split(".")[0], text, key: text.toLowerCase(), status: "approved", voter: "presenter", lang: "", ...(part ? { part } : {}) });
+        s.words.push({ id: ++s.wordSeq, slot: s.slot, text, key: text.toLowerCase(), status: "approved", voter: "presenter", ...(part ? { part } : {}) });
         await this.ctx.storage.put("state", s);
         this.scheduleBroadcast(false);
         return [{ ok: true }, 200];
@@ -295,18 +303,26 @@ export class Game {
     return [{ error: "unknown action" }, 400];
   }
 
-  // Presenters get tally updates (throttled). Phones only when slot/phase/timer change.
+  // Presenters get tally updates every 250 ms at most. Phones get every slot/phase/timer change at once,
+  // and the live tally at most once a second (so after voting they see the room's result fill).
   scheduleBroadcast(includeVoters) {
     if (includeVoters) {
+      this.lastVoterSend = Date.now();
       this.sendTo("voter", this.publicState(false));
       this.sendTo("presenter", this.publicState(true));
       return;
     }
-    if (this.broadcastTimer) return;
-    this.broadcastTimer = setTimeout(() => {
-      this.broadcastTimer = null;
-      this.sendTo("presenter", this.publicState(true));
-    }, 250);
+    if (!this.broadcastTimer)
+      this.broadcastTimer = setTimeout(() => {
+        this.broadcastTimer = null;
+        this.sendTo("presenter", this.publicState(true));
+      }, 250);
+    if (!this.voterTimer && this.state.phase === "open")
+      this.voterTimer = setTimeout(() => {
+        this.voterTimer = null;
+        this.lastVoterSend = Date.now();
+        this.sendTo("voter", this.publicState(false));
+      }, Math.max(0, 1000 - (Date.now() - this.lastVoterSend)));
   }
 
   sendTo(tag, state) {
@@ -332,90 +348,4 @@ export class Game {
     this.scheduleBroadcast(false);
   }
   async webSocketError() {}
-}
-
-/** Estimate sliders: send medians (and counts) instead of every number. */
-function summariseNums(nums) {
-  const out = {};
-  for (const [k, list] of Object.entries(nums || {})) {
-    const a = [...list].sort((x, y) => x - y);
-    const mid = Math.floor(a.length / 2);
-    out[k] = { n: a.length, median: a.length ? (a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2) : null };
-  }
-  return out;
-}
-
-// ------------------------------------------------------------------ "Other language" AI translation
-// The phone sends { language: "Konkani", part: "ui" | <route id> }. The Worker
-// translates that part of content/en.json with Claude. The API key is a Worker
-// secret (ANTHROPIC_API_KEY) and never reaches the browser. Results are cached
-// per language + part; identical requests in flight share one API call.
-// Switch the feature off with "otherLanguageAI": false in content/en.json.
-const memo = new Map();
-let windowStart = 0;
-let callsInWindow = 0;
-
-async function translate(request, env, ctx) {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "bad json" }, 400);
-  }
-  const en = await (await env.ASSETS.fetch(new URL("/content/en.json", request.url))).json();
-  if (!en.config?.otherLanguageAI) return json({ error: "AI translation is switched off" }, 404);
-  if (!env.ANTHROPIC_API_KEY) return json({ error: "AI translation is not configured" }, 503);
-  const language = String(body?.language || "").trim().replace(/\s+/g, " ");
-  if (!/^[\p{L}\p{M} ()'-]{2,40}$/u.test(language)) return json({ error: "bad language name" }, 400);
-  const part = body?.part === "ui" ? "ui" : String(body?.part || "");
-  if (part !== "ui" && !/^[a-z0-9]{1,8}$/.test(part)) return json({ error: "bad part" }, 400);
-  const strings = partStrings(en, part);
-  if (!Object.keys(strings).length) return json({ error: "nothing to translate" }, 400);
-
-  const key = `${language.toLowerCase()}|${part}|${await sha(JSON.stringify(strings))}`;
-  const cacheUrl = new URL(`https://ride-translate.invalid/${encodeURIComponent(key)}`);
-  const cache = caches.default;
-  const hit = await cache.match(cacheUrl);
-  if (hit) return json({ language, part, strings: await hit.json(), aiTranslated: true, cached: true });
-  if (!memo.has(key)) {
-    const now = Date.now();
-    if (now - windowStart > 60_000) {
-      windowStart = now;
-      callsInWindow = 0;
-    }
-    if (++callsInWindow > 60) return json({ error: "too many translation requests, try again soon" }, 429);
-    memo.set(key, callClaude(env, language, strings));
-  }
-  try {
-    const result = await memo.get(key);
-    ctx.waitUntil(cache.put(cacheUrl, new Response(JSON.stringify(result), { headers: { "cache-control": "max-age=86400" } })));
-    return json({ language, part, strings: result, aiTranslated: true });
-  } catch (err) {
-    memo.delete(key);
-    return json({ error: "translation failed", detail: String(err?.message || err).slice(0, 200) }, 502);
-  }
-}
-
-async function callClaude(env, language, strings) {
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 1, timeout: 25_000 });
-  const schema = z.object(Object.fromEntries(Object.keys(strings).map((k) => [k, z.string()])));
-  const response = await client.messages.parse({
-    model: env.TRANSLATE_MODEL || "claude-opus-5-5",
-    max_tokens: 16000,
-    output_config: { effort: "low", format: zodOutputFormat(schema) },
-    system:
-      "You translate short texts for a live quiz game played on phones by people from Indian nonprofits. " +
-      "Translate every value of the JSON object into the language named by the user, in that language's usual script. " +
-      "Use plain, everyday words. Keep option labels short. Keep {placeholders} like {n} and {name} exactly as they are. " +
-      "Keep the keys unchanged. If the language name is not a real language, return the English text unchanged.",
-    messages: [{ role: "user", content: `<language>${language}</language>\n<strings>\n${JSON.stringify(strings, null, 1)}\n</strings>` }],
-  });
-  if (response.stop_reason === "refusal") throw new Error("model declined");
-  if (!response.parsed_output) throw new Error("no structured output");
-  return response.parsed_output;
-}
-
-async function sha(text) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return [...new Uint8Array(buf)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
