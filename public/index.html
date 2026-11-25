@@ -43,6 +43,8 @@
       <main id="scene"></main>
 
       <div id="bandWrap"><svg id="band" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg></div>
+      <!-- The bike rides in its own unclipped layer above the band, so the rider is never cut off -->
+      <svg id="bikeLayerSvg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
 
       <div id="qrCard" class="qr-card hidden">
         <div class="qr" id="qrSmall"></div>
@@ -58,12 +60,15 @@
         <span class="pill" id="barWhere">Start</span>
         <span class="pill" id="barMode">HOST</span>
         <span class="pill hidden" id="barVotes">0 votes</span>
+        <span class="pill hidden" id="barLow"></span>
         <span id="barHint"></span>
+        <button data-act="returnLive" id="btnLive" class="hidden primary" title="L">Return to Live</button>
         <button data-act="back" title="←">◀ Back</button>
         <button data-act="closeVote" id="btnClose" class="hidden" title="V">Close vote</button>
         <button data-act="word" id="btnWord" class="hidden" title="W">Add word</button>
+        <button data-act="wordNever" id="btnNever" class="hidden" title="N">Add Never</button>
         <button data-act="reveal" title="R">Reveal</button>
-        <button data-act="next" class="primary" title="→">Next ▶</button>
+        <button data-act="next" id="btnNext" class="primary" title="→">Next ▶</button>
         <button data-act="timer" id="btnTimer" title="T">Timer</button>
         <button data-act="mode" title="L">Mode</button>
         <button data-act="reset" class="danger">Reset</button>
