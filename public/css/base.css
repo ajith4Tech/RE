@@ -1,45 +1,51 @@
-/* "The Highway" — shared tokens, fonts and texture (all bundled locally). */
-@font-face { font-family: "Atkinson"; src: url("../fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: block; }
-@font-face { font-family: "Atkinson"; src: url("../fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: block; }
+/* The Ride — shared tokens and fonts (all bundled locally).
+   One typeface (Glacial Indifference, SIL OFL; falls back to Lexend, then the system sans-serif),
+   a warm cream background, white surfaces, one teal accent for action and marigold used sparingly
+   for game moments (timer, "votes locked", live pulse, reveal sign, moderator flags). */
+@font-face { font-family: "Glacial"; src: url("../fonts/glacial-indifference-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: "Glacial"; src: url("../fonts/glacial-indifference-700.woff2") format("woff2"); font-weight: 700 900; font-style: normal; font-display: block; }
+@font-face { font-family: "Glacial"; src: url("../fonts/glacial-indifference-400italic.woff2") format("woff2"); font-weight: 400 900; font-style: italic; font-display: block; }
+/* Lexend fills glyphs Glacial lacks (e.g. the middle dot and curly quotes) */
+@font-face { font-family: "Lexend"; src: url("../fonts/lexend-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Lexend"; src: url("../fonts/lexend-latin-700-normal.woff2") format("woff2"); font-weight: 700 900; font-display: swap; }
 
 :root {
-  /* Palette */
-  --green: #1F5A3D;      /* highway signboard */
-  --green-2: #174a31;
-  --yellow: #F2C230;     /* milestone top */
-  --red: #B5462B;        /* laterite */
-  --chalk: #F5F1E6;      /* chalk white */
-  --ink: #1A1A1A;        /* ink black */
-  --sky: #DCCFB8;        /* dusty sky */
-  --sky-2: #CDBF9F;
-  --ink-2: #3D3A35;      /* secondary text on light (≥ 9:1 on chalk) */
+  /* Palette (every text/background pair is ≥ 4.5:1; marigold is never used for text) */
+  --bg: #F7F3EC;        /* warm cream */
+  --surface: #FFFFFF;   /* cards, option rows */
+  --line: #E6E0D6;      /* 1px borders */
+  --ink: #22252B;       /* primary text */
+  --ink-2: #6B7078;     /* secondary text (on cream or white only) */
+  --teal: #2F6F62;      /* the one accent: road, bike details, selected states, result fills */
+  --tint: #DDEBE7;      /* result bars */
+  --marigold: #E8A33D;  /* game highlight, sparingly */
+  --amber-tint: #FBEBD2; /* moderator flags (with ink text) */
 
-  /* Type: signage display, hand-painted boards, humanist body; Indic scripts fall back to Noto */
-  --scripts: "RideDeva", "RideTelu", "RideKnda", "RideBeng", "RideTaml", "RideTibt", "RideUrdu";
-  --sign: "Signage", var(--scripts), "Arial Narrow", sans-serif;
-  --paint: "Painted", var(--scripts), "Signage", sans-serif;
-  --body: "Atkinson", var(--scripts), sans-serif;
+  /* One corner radius for every card, row, button and input; circles and pills are shapes, not corners */
+  --r: 16px;
+  /* Spacing is in multiples of 8px. One easing curve and three durations for every animation. */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --t-fast: .2s;
+  --t: .4s;
+  --t-slow: .8s;
 
-  /* Paper grain (risograph-like noise) */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .1 0 0 0 0 .1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  --ui: "Glacial", "Lexend", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
-body { font-family: var(--body); color: var(--ink); background: var(--sky); -webkit-font-smoothing: antialiased; }
-button, input { font-family: inherit; }
+body { font-family: var(--ui); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+/* No default browser styling anywhere: buttons and inputs are styled by each page */
+button, input, select, textarea { font: inherit; color: inherit; margin: 0; }
+button { appearance: none; -webkit-appearance: none; background: none; border: 0; padding: 0; cursor: pointer; }
+input { appearance: none; -webkit-appearance: none; border-radius: var(--r); }
+input:focus { outline: none; border-color: var(--teal) !important; box-shadow: 0 0 0 3px var(--tint); }
+a { color: var(--teal); }
 .hidden { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* Grain over any surface: add class "grain" (needs position: relative) */
-.grain::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: 0.16; mix-blend-mode: multiply; pointer-events: none; }
-
-/* Taller scripts need more line height. Urdu reads right to left in Nastaliq. */
-:lang(ur) { font-family: "RideUrdu", "Atkinson", serif; line-height: 2; }
-:lang(lad) { line-height: 1.7; }
-[dir="rtl"] { text-align: right; }
-
-:focus-visible { outline: 4px solid var(--yellow); outline-offset: 3px; box-shadow: 0 0 0 7px var(--ink); }
+:focus { outline: none; }
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
