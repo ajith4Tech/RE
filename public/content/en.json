@@ -15,7 +15,7 @@
 
   "title": "The Ride",
   "subtitle": "Bengaluru to Travancore Palace",
-  "intro": "Ten questions. Seven pitstops. 2,100 km. You decide how smooth the ride is.",
+  "intro": "Eleven questions. Seven pitstops. 2,100 km. You decide how smooth the ride is.",
   "closingLine": "Now let's build what you actually need. See you in the Lab.",
 
   "ui": {
@@ -71,197 +71,742 @@
     "thanks": "Thanks for riding along.",
     "aiTranslated": "AI-translated, not checked.",
     "translating": "Translating…",
-    "translateFailed": "Translation isn't available right now, so this is in English."
+    "translateFailed": "Translation isn't available right now, so this is in English.",
+    "voteCounted": "Vote counted ✓",
+    "dragHelp": "Drag a handle, or use the arrows, to change the order.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "dualHelp": "Up to 40 characters each. You can leave one blank.",
+    "dualSent": "Sent! The moderator will add your answers to the map.",
+    "mirror": "Mirror",
+    "today": "Today",
+    "inSixMonths": "In 6 months",
+    "openLink": "Open the link"
   },
 
-  "route": [
+  "stops": [
     {
-      "id": "q1", "kind": "question", "place": "Bengaluru", "km": 0,
-      "languages": ["kn"], "landscape": "deccan",
+      "id": "bengaluru",
+      "place": "Bengaluru",
       "welcome": "Welcome to Bengaluru",
-      "personaName": "Kavya", "role": "Communications lead", "orgType": "Education NGO",
-      "portrait": { "skin": "#9A6644", "hair": "long", "hairColor": "#1A1A1A", "top": "#1F5A3D", "extra": "earrings" },
-      "shift": "Time and cost collapsed.",
-      "scenario": "In 2019, Kavya's NGO paid a vendor to build a volunteer sign-up portal. Today she needs another one.",
-      "question": "How long did it take, and what did it cost, then and now?",
-      "type": "estimate",
-      "periods": [ { "id": "then", "text": "Then (2019)" }, { "id": "now", "text": "Now" } ],
-      "sliders": [
-        { "id": "weeks", "text": "How many weeks?", "min": 0, "max": 30, "step": 1, "format": "weeks" },
-        { "id": "cost", "text": "How much did it cost (₹)?", "min": 0, "max": 500000, "step": 2000, "format": "inr" }
+      "km": 0,
+      "languages": [
+        "kn"
       ],
-      "answer": { "then": { "weeks": 16, "cost": 200000 }, "now": { "weeks": 0.3, "cost": 2000 } },
-      "answerText": { "then": "16 weeks, ₹2,00,000", "now": "1 weekend, under ₹2,000" },
-      "placeholder": "PLACEHOLDER: confirm with a real Tech4Good example",
-      "reveal": "Building got cheap and fast. Thinking about the right problem didn't, and it still matters most.",
-      "moderatorTalkingPoints": ["Where would you spend the time you saved?", "Cheap to build means cheap to throw away and try again."],
-      "scored": false
-    },
-    {
-      "id": "q2", "kind": "question", "place": "Anantapur", "km": 215,
-      "languages": ["te"], "landscape": "deccan",
-      "welcome": "Welcome to Anantapur",
-      "personaName": "Ravi", "role": "Monitoring officer", "orgType": "Farmers' NGO",
-      "portrait": { "skin": "#7A4B2E", "hair": "short", "hairColor": "#1A1A1A", "top": "#DCCFB8", "extra": "moustache" },
-      "shift": "The middleman gap is closing.",
-      "scenario": "Years ago, Ravi asked a developer for a reminder app for farmers. It took 5 months. The farmers needed voice calls, not an app.",
-      "question": "Where did it go wrong?",
-      "type": "tapstep",
-      "steps": [
-        { "id": "s1", "text": "Farmers keep missing sowing dates" },
-        { "id": "s2", "text": "Ravi writes a brief: build a reminder app" },
-        { "id": "s3", "text": "Developer builds from the brief" },
-        { "id": "s4", "text": "Five months of building" },
-        { "id": "s5", "text": "App launches" },
-        { "id": "s6", "text": "Farmers don't install it" }
-      ],
-      "answer": "s2",
-      "reveal": "The solution was decided before anyone understood the users. Today Ravi could build a rough version himself in a day, test it with ten farmers, and learn they wanted voice calls.",
-      "moderatorTalkingPoints": ["Who in your organisation understands the problem best, and could they build the first version?"],
-      "scored": true
-    },
-    {
-      "id": "p1", "kind": "pitstop", "pitType": "petrol", "place": "Petrol pump", "km": 330,
-      "languages": ["te"], "landscape": "deccan",
-      "welcome": "Fuel stop ahead",
-      "board": "The person with the problem builds the first version.",
-      "poll": {
-        "question": "Will your organisation try this?",
-        "options": [ { "id": "yes", "text": "Yes" }, { "id": "notyet", "text": "Not yet" } ]
+      "landscape": "deccan",
+      "personaName": "The Tech4Good team",
+      "voice": "Almost anyone can build now. But are we building the right thing?",
+      "emblem": {
+        "icon": "compass",
+        "color": "green"
       },
-      "fuel": { "shareYes": 20 },
-      "stamp": "FUEL"
+      "steps": [
+        "intro",
+        "p1",
+        "q1",
+        "p2"
+      ]
     },
     {
-      "id": "q3", "kind": "question", "place": "Hyderabad", "km": 570,
-      "languages": ["te", "ur"], "landscape": "oldcity",
-      "welcome": "Welcome to Hyderabad",
-      "personaName": "Farida", "role": "Fundraiser", "orgType": "Handloom weavers' collective",
-      "portrait": { "skin": "#A8714A", "hair": "covered", "hairColor": "#B5462B", "top": "#F2C230", "extra": "glasses" },
-      "shift": "Prototypes replace long briefs.",
-      "scenario": "In one afternoon, Farida built three rough versions of a donor update page with AI.",
-      "question": "What should she do next?",
-      "type": "choose",
-      "options": [
-        { "id": "A", "text": "Pick the prettiest one" },
-        { "id": "B", "text": "Show all three to five donors and watch what they do" },
-        { "id": "C", "text": "Ask the AI which is best" },
-        { "id": "D", "text": "Build all three properly" }
+      "id": "anantapur",
+      "place": "Anantapur",
+      "welcome": "Welcome to Anantapur",
+      "km": 215,
+      "languages": [
+        "te"
       ],
-      "answer": "B",
-      "reveal": "Show, don't spec. Cheap prototypes let real users choose.",
-      "moderatorTalkingPoints": ["When did you last test something before building it fully?"],
-      "scored": true
+      "landscape": "deccan",
+      "personaName": "Meera",
+      "role": "Field researcher",
+      "orgType": "Conservation organisation",
+      "voice": "We have years of data. But do we really understand what it's telling us?",
+      "emblem": {
+        "icon": "binoculars",
+        "color": "green"
+      },
+      "steps": [
+        "q2",
+        "q3",
+        "p3"
+      ]
     },
     {
-      "id": "p2", "kind": "pitstop", "pitType": "landslide", "place": "Landslide", "km": 700,
-      "languages": ["te"], "landscape": "teak",
-      "welcome": "Road blocked ahead",
-      "board": "Someone built the full solution before testing with users. Nobody used it.",
-      "poll": {
-        "question": "Best way round it next time?",
-        "options": [
-          { "id": "A", "text": "Test a rough version with 5 real users first" },
-          { "id": "B", "text": "Spend more on design" },
-          { "id": "C", "text": "Add more features" }
+      "id": "adilabad",
+      "place": "Adilabad",
+      "welcome": "Welcome to Adilabad",
+      "km": 870,
+      "languages": [
+        "te"
+      ],
+      "landscape": "teak",
+      "personaName": "Lakshmi",
+      "role": "Community coordinator",
+      "voice": "You built something for us. But did you ask us what we needed?",
+      "emblem": {
+        "icon": "hands",
+        "color": "red"
+      },
+      "steps": [
+        "q4",
+        "q5"
+      ]
+    },
+    {
+      "id": "nagpur",
+      "place": "Nagpur",
+      "welcome": "Welcome to Nagpur",
+      "milestone": "Nagpur · Zero Mile",
+      "km": 1060,
+      "languages": [
+        "mr"
+      ],
+      "landscape": "orange",
+      "personaName": "Asha",
+      "role": "Data steward",
+      "voice": "We want to use AI. But whose information are we putting at risk?",
+      "emblem": {
+        "icon": "padlock",
+        "color": "yellow"
+      },
+      "steps": [
+        "q6",
+        "c1",
+        "q7",
+        "c2",
+        "p4"
+      ]
+    },
+    {
+      "id": "jhansi",
+      "place": "Jhansi",
+      "welcome": "Welcome to Jhansi",
+      "milestone": "Jhansi · The broken bridge",
+      "km": 1660,
+      "languages": [
+        "hi"
+      ],
+      "landscape": "bundelkhand",
+      "personaName": "Imran",
+      "role": "Tech maintainer",
+      "voice": "It worked beautifully when it launched. Who's going to keep it working?",
+      "emblem": {
+        "icon": "wrench",
+        "color": "red"
+      },
+      "steps": [
+        "q8",
+        "p5",
+        "q9",
+        "p6"
+      ]
+    },
+    {
+      "id": "agra",
+      "place": "Agra",
+      "welcome": "Welcome to Agra",
+      "milestone": "Agra · The travellers meet",
+      "km": 1890,
+      "languages": [
+        "hi",
+        "ur"
+      ],
+      "landscape": "yamuna",
+      "personaName": "Everyone from the road",
+      "role": "Meera, Lakshmi, Asha and Imran",
+      "voice": "None of us can solve this alone.",
+      "emblem": {
+        "group": [
+          {
+            "icon": "binoculars",
+            "color": "green"
+          },
+          {
+            "icon": "hands",
+            "color": "red"
+          },
+          {
+            "icon": "padlock",
+            "color": "yellow"
+          },
+          {
+            "icon": "wrench",
+            "color": "red"
+          }
         ]
       },
-      "answer": "A",
-      "fuel": { "right": -10, "wrong": -20 },
-      "stamp": "DETOUR"
-    },
-    {
-      "id": "q4", "kind": "question", "place": "Adilabad", "km": 870,
-      "languages": ["te"], "landscape": "teak",
-      "welcome": "Welcome to Adilabad",
-      "personaName": "Sunitha", "role": "Tribal health coordinator", "orgType": "Community health programme",
-      "portrait": { "skin": "#6B4028", "hair": "bun", "hairColor": "#1A1A1A", "top": "#B5462B", "extra": "bindi" },
-      "shift": "Agentic AI does multi-step work.",
-      "scenario": "Every Monday, Sunitha's AI agent reads health workers' WhatsApp reports, compiles them, flags villages with fever spikes, and drafts an alert to the district.",
-      "question": "Where must the agent stop and ask a human?",
-      "type": "checkpoint",
       "steps": [
-        { "id": "read", "text": "Read reports" },
-        { "id": "compile", "text": "Compile" },
-        { "id": "flag", "text": "Flag villages" },
-        { "id": "draft", "text": "Draft alert" },
-        { "id": "send", "text": "Send to district" }
-      ],
-      "answer": "g4",
-      "reveal": "Agents can act, not just answer. You decide where they must stop and ask a human.",
-      "moderatorTalkingPoints": ["What's one repetitive multi-step task an agent could run for you, and where would you put the checkpoint?"],
-      "scored": true
+        "q10",
+        "p7"
+      ]
     },
     {
-      "id": "p3", "kind": "pitstop", "pitType": "viewpoint", "place": "Viewpoint", "km": 940,
-      "languages": ["te"], "landscape": "teak",
+      "id": "palace",
+      "place": "Travancore Palace, New Delhi",
+      "welcome": "Welcome to Travancore Palace",
+      "km": 2100,
+      "languages": [
+        "hi"
+      ],
+      "landscape": "palace",
+      "personaName": "You",
+      "role": "Everyone in this room",
+      "emblem": {
+        "icon": "milestones",
+        "color": "yellow"
+      },
+      "steps": [
+        "q11"
+      ]
+    }
+  ],
+  "route": [
+    {
+      "id": "intro",
+      "kind": "intro"
+    },
+    {
+      "id": "p1",
+      "kind": "pitstop",
+      "pitType": "viewpoint",
+      "place": "Viewpoint",
       "welcome": "Viewpoint ahead",
       "board": "People are building for themselves.",
       "polls": [
-        { "id": "who", "question": "Who built this?", "options": [ { "id": "agency", "text": "Developer agency" }, { "id": "inhouse", "text": "In-house tech team" }, { "id": "nocode", "text": "Someone with no coding background" } ] },
-        { "id": "time", "question": "How long did it take?", "options": [ { "id": "6m", "text": "6 months" }, { "id": "1m", "text": "1 month" }, { "id": "weekend", "text": "A weekend" } ] },
-        { "id": "cost", "question": "What did it cost?", "options": [ { "id": "5l", "text": "₹5 lakh" }, { "id": "50k", "text": "₹50,000" }, { "id": "free", "text": "Almost nothing" } ] }
+        {
+          "id": "who",
+          "question": "Who built this?",
+          "options": [
+            {
+              "id": "agency",
+              "text": "Developer agency"
+            },
+            {
+              "id": "inhouse",
+              "text": "In-house tech team"
+            },
+            {
+              "id": "nocode",
+              "text": "Someone with no coding background"
+            }
+          ]
+        },
+        {
+          "id": "time",
+          "question": "How long did it take?",
+          "options": [
+            {
+              "id": "6m",
+              "text": "6 months"
+            },
+            {
+              "id": "1m",
+              "text": "1 month"
+            },
+            {
+              "id": "weekend",
+              "text": "A weekend"
+            }
+          ]
+        },
+        {
+          "id": "cost",
+          "question": "What did it cost?",
+          "options": [
+            {
+              "id": "5l",
+              "text": "₹5 lakh"
+            },
+            {
+              "id": "50k",
+              "text": "₹50,000"
+            },
+            {
+              "id": "free",
+              "text": "Almost nothing"
+            }
+          ]
+        }
       ],
       "showcases": [
-        { "id": "hakki", "title": "Hakki", "url": "https://hakki.photos/", "image": "img/showcase-hakki.png",
-          "answers": { "who": "nocode", "time": "weekend", "cost": "free" }, "note": "PLACEHOLDER: confirm the real story" },
-        { "id": "holematthi", "title": "Holématthi Nature Foundation", "url": "https://holematthi-nature-foundation.r-bhuvanesh2007.workers.dev/", "image": "img/showcase-holematthi.png",
-          "answers": { "who": "nocode", "time": "weekend", "cost": "free" }, "note": "PLACEHOLDER: confirm the real story" },
-        { "id": "t4g", "title": "Tech4Good example", "url": "", "image": "",
-          "answers": { "who": "nocode", "time": "weekend", "cost": "free" }, "note": "PLACEHOLDER: add a Tech4Good example, or delete this showcase" }
+        {
+          "id": "hakki",
+          "title": "Hakki",
+          "url": "https://hakki.photos/",
+          "image": "img/showcase-hakki.png",
+          "answers": {
+            "who": "nocode",
+            "time": "weekend",
+            "cost": "free"
+          },
+          "note": "PLACEHOLDER: confirm the real story"
+        },
+        {
+          "id": "holematthi",
+          "title": "Holématthi Nature Foundation",
+          "url": "https://holematthi-nature-foundation.r-bhuvanesh2007.workers.dev/",
+          "image": "img/showcase-holematthi.png",
+          "answers": {
+            "who": "nocode",
+            "time": "weekend",
+            "cost": "free"
+          },
+          "note": "PLACEHOLDER: confirm the real story"
+        }
       ],
+      "revealAfter": "q1",
       "stamp": "VIEWPOINT"
     },
     {
-      "id": "q5", "kind": "question", "place": "Nagpur", "km": 1060,
-      "languages": ["mr"], "landscape": "orange",
-      "welcome": "Welcome to Nagpur",
-      "personaName": "Prakash", "role": "Disability rights coordinator", "orgType": "Disabled people's organisation",
-      "portrait": { "skin": "#8A5634", "hair": "short", "hairColor": "#4A4A4A", "top": "#1F5A3D", "extra": "glasses-beard" },
-      "shift": "AI as a thinking partner, before building.",
-      "scenario": "Prakash typed 'Build me an accessible website.' The AI asked who his users were, and suggested a voice line might serve them better.",
-      "question": "Which first prompt is best?",
+      "id": "q1",
+      "kind": "question",
+      "question": "What's the hardest part of building something like this today?",
       "type": "choose",
       "options": [
-        { "id": "A", "text": "Build me an accessible website." },
-        { "id": "B", "text": "Build me an accessible website in Marathi with large text." },
-        { "id": "C", "text": "Make our website pass accessibility checks." },
-        { "id": "D", "text": "Here's our problem, who our users are and what they can access. What are my options before we build anything?" }
+        {
+          "id": "A",
+          "text": "Writing the code"
+        },
+        {
+          "id": "B",
+          "text": "Knowing what to build"
+        },
+        {
+          "id": "C",
+          "text": "Understanding the people who'll use it"
+        },
+        {
+          "id": "D",
+          "text": "Keeping it running"
+        }
       ],
-      "answer": "D",
-      "reveal": "Let AI challenge your solution before you build. Sometimes the problem needs something else entirely, and the users should test whatever you build.",
-      "moderatorTalkingPoints": ["Accessibility means disability, language and literacy. Who tests your tools?"],
+      "reveal": "AI has made the code easier. The other three are still on us.",
+      "mirror": {
+        "id": "road",
+        "question": "Where is your organisation on the AI road?",
+        "options": [
+          {
+            "id": "parked",
+            "text": "Parked"
+          },
+          {
+            "id": "learning",
+            "text": "Learning to ride"
+          },
+          {
+            "id": "daily",
+            "text": "Riding daily"
+          },
+          {
+            "id": "own",
+            "text": "Building our own"
+          }
+        ]
+      },
+      "moderatorTalkingPoints": [
+        "Ask a few people why they picked their answer.",
+        "Then reveal the viewpoint answers: who built Hakki and Holématthi, how long it took, what it cost."
+      ],
+      "scored": false
+    },
+    {
+      "id": "p2",
+      "kind": "pitstop",
+      "pitType": "landslide",
+      "title": "The shortcut",
+      "place": "The shortcut",
+      "welcome": "Shortcut ahead",
+      "board": "The team found a shortcut. Is the shortcut always the right road?",
+      "poll": {
+        "question": "Which way?",
+        "options": [
+          {
+            "id": "A",
+            "text": "Take it, it's faster"
+          },
+          {
+            "id": "B",
+            "text": "Check where it leads first"
+          },
+          {
+            "id": "C",
+            "text": "Stick to the old road"
+          }
+        ]
+      },
+      "answer": "B",
+      "fuel": {
+        "right": -10,
+        "wrong": -20
+      },
+      "stamp": "SHORTCUT"
+    },
+    {
+      "id": "q2",
+      "kind": "question",
+      "scenario": "10 years of field notes, photos and species sightings.",
+      "question": "What would you ask AI to help you discover?",
+      "type": "wordcloud",
+      "maxLength": 40,
+      "reveal": "AI can help you see patterns across years of information that no one has time to read.",
+      "moderatorTalkingPoints": [
+        "Read out three answers from the cloud."
+      ],
+      "scored": false
+    },
+    {
+      "id": "q3",
+      "kind": "question",
+      "scenario": "AI finds a convincing pattern. Meera knows from experience it's wrong.",
+      "question": "What now?",
+      "type": "choose",
+      "options": [
+        {
+          "id": "A",
+          "text": "Trust the AI, it's seen all the data"
+        },
+        {
+          "id": "B",
+          "text": "Trust Meera, she's been there"
+        },
+        {
+          "id": "C",
+          "text": "Check the data together: the AI's pattern against Meera's experience"
+        },
+        {
+          "id": "D",
+          "text": "Ask a different AI"
+        }
+      ],
+      "answer": "C",
+      "almost": [
+        "B"
+      ],
+      "reveal": "AI can spot patterns, but the data may be incomplete or biased. People with ground experience validate what AI finds.",
+      "moderatorTalkingPoints": [
+        "B is the second-best answer: Meera's experience matters, but so does checking."
+      ],
       "scored": true
     },
     {
-      "id": "q6", "kind": "question", "place": "Pench (Seoni)", "km": 1150,
-      "languages": ["hi"], "landscape": "teak",
-      "welcome": "Welcome to Pench",
-      "personaName": "Vikram", "role": "Field coordinator", "orgType": "Wildlife conservation team",
-      "portrait": { "skin": "#7E4F31", "hair": "cap", "hairColor": "#1A1A1A", "top": "#6B7B3A", "extra": "stubble" },
-      "shift": "Anyone can ship, so check before you share.",
-      "scenario": "Vikram vibe-coded a camera-trap dashboard over the weekend and wants to share it.",
-      "question": "Pick the 4 most important checks before he shares it.",
-      "type": "pickn",
-      "n": 4,
+      "id": "p3",
+      "kind": "pitstop",
+      "pitType": "petrol",
+      "place": "Petrol pump",
+      "welcome": "Fuel stop ahead",
+      "board": "AI suggests, people who know the ground decide.",
+      "poll": {
+        "question": "Will your organisation try this?",
+        "options": [
+          {
+            "id": "yes",
+            "text": "Yes"
+          },
+          {
+            "id": "notyet",
+            "text": "Not yet"
+          }
+        ]
+      },
+      "fuel": {
+        "shareYes": 20
+      },
+      "stamp": "FUEL"
+    },
+    {
+      "id": "q4",
+      "kind": "question",
+      "scenario": "You can build the app in a weekend, but the people who need it most may not be able to use it.",
+      "question": "What would you change?",
+      "type": "choose",
+      "options": [
+        {
+          "id": "A",
+          "text": "The technology"
+        },
+        {
+          "id": "B",
+          "text": "How people interact with it"
+        },
+        {
+          "id": "C",
+          "text": "The original idea itself"
+        }
+      ],
+      "reveal": "Being able to build something doesn't mean people will use it.",
+      "moderatorTalkingPoints": [
+        "There's no single right answer. Ask the room for an example from their own work."
+      ],
+      "scored": false
+    },
+    {
+      "id": "q5",
+      "kind": "question",
+      "shift": "Accessibility",
+      "hurdles": [
+        "Hurdle 1: no reliable internet",
+        "Hurdle 2: people don't want to share personal details",
+        "Hurdle 3: no one to maintain a custom app"
+      ],
+      "question": "Now, what's the best route?",
+      "type": "choose",
+      "options": [
+        {
+          "id": "A",
+          "text": "A voice line in the local language"
+        },
+        {
+          "id": "B",
+          "text": "A simple WhatsApp process, with a person to help"
+        },
+        {
+          "id": "C",
+          "text": "An offline-first app"
+        },
+        {
+          "id": "D",
+          "text": "Improve the current process, no new tool"
+        }
+      ],
+      "answer": "B",
+      "almost": [
+        "A"
+      ],
+      "reveal": "The shortest route to a solution isn't always the one with the most technology. The community should shape the design.",
+      "moderatorTalkingPoints": [
+        "A is the second-best answer: a voice line works offline, but someone still has to help people use it."
+      ],
+      "scored": true
+    },
+    {
+      "id": "q6",
+      "kind": "question",
+      "scenario": "You want AI to find trends in 5,000 records.",
+      "question": "Sort each item.",
+      "type": "match",
+      "buckets": [
+        {
+          "id": "leave",
+          "text": "Can leave the organisation"
+        },
+        {
+          "id": "tokenize",
+          "text": "Leave only after tokenizing"
+        },
+        {
+          "id": "never",
+          "text": "Never leaves"
+        }
+      ],
       "items": [
-        { "id": "login", "text": "Turn on login" },
-        { "id": "locations", "text": "Remove exact animal locations" },
-        { "id": "keys", "text": "No secret keys inside the code" },
-        { "id": "dummy", "text": "Start with dummy data" },
-        { "id": "phone", "text": "Test it on a phone" },
-        { "id": "eyes", "text": "Get a second pair of eyes" },
-        { "id": "colours", "text": "Nicer colours" },
-        { "id": "domain", "text": "Buy a domain name" }
+        {
+          "id": "totals",
+          "text": "Village-level totals"
+        },
+        {
+          "id": "names",
+          "text": "Names and phone numbers"
+        },
+        {
+          "id": "health",
+          "text": "Health conditions linked to IDs"
+        },
+        {
+          "id": "reports",
+          "text": "Programme reports with no names"
+        }
       ],
-      "decoys": ["colours", "domain"],
-      "reveal": "Vibe coding works. Safety checks are now your job.",
-      "moderatorTalkingPoints": ["What would be the worst thing if your app's link got forwarded?"],
+      "answers": {
+        "totals": "leave",
+        "names": "never",
+        "health": "tokenize",
+        "reports": "leave"
+      },
+      "keyMatch": [
+        "names",
+        "health"
+      ],
+      "reveal": "Some data can go out as it is, some only once it's tokenized, and some should never leave.",
+      "mirror": {
+        "id": "hold",
+        "question": "Does your organisation hold data you'd never send outside?",
+        "options": [
+          {
+            "id": "yes",
+            "text": "Yes"
+          },
+          {
+            "id": "no",
+            "text": "No"
+          },
+          {
+            "id": "notsure",
+            "text": "Not sure"
+          }
+        ]
+      },
+      "moderatorTalkingPoints": [
+        "Key items: names and phone numbers never leave; health conditions linked to IDs leave only after tokenizing."
+      ],
       "scored": true
     },
     {
-      "id": "p4", "kind": "pitstop", "pitType": "mechanic", "place": "Mechanic", "km": 1260,
-      "languages": ["hi"], "landscape": "bundelkhand",
+      "id": "c1",
+      "kind": "card",
+      "title": "Tokenization, explained",
+      "rows": [
+        {
+          "from": "Lakshmi",
+          "to": "PERSON_001"
+        },
+        {
+          "from": "Bengaluru",
+          "to": "LOCATION_001"
+        },
+        {
+          "from": "Beneficiary ID 1023",
+          "to": "BENEFICIARY_001"
+        }
+      ],
+      "text": "AI works with the tokens. The key that links them back stays with you. Tokenized is not the same as anonymous, so protect the key."
+    },
+    {
+      "id": "q7",
+      "kind": "question",
+      "question": "If data mustn't leave, is running AI on your own machine the answer?",
+      "type": "choose",
+      "options": [
+        {
+          "id": "A",
+          "text": "Yes, fully"
+        },
+        {
+          "id": "B",
+          "text": "Partly: you still need access control, backups, upkeep and the right hardware"
+        },
+        {
+          "id": "C",
+          "text": "No"
+        }
+      ],
+      "answer": "B",
+      "reveal": "A local model can be part of a privacy-conscious setup, but running it locally doesn't solve security or maintenance by itself.",
+      "moderatorTalkingPoints": [
+        "Who in your organisation would look after a local model?"
+      ],
+      "scored": true
+    },
+    {
+      "id": "c2",
+      "kind": "card",
+      "title": "Insight Out",
+      "text": "Exploring these questions for your own organisation? Tech4Good's Insight Out programme works on exactly this.",
+      "link": {
+        "url": "",
+        "label": "PLACEHOLDER: add the Insight Out link"
+      }
+    },
+    {
+      "id": "p4",
+      "kind": "pitstop",
+      "pitType": "checkpost",
+      "place": "Checkpost",
+      "welcome": "Checkpost ahead",
+      "board": "Data check!",
+      "question": "Leave, tokenize, or never?",
+      "options": [
+        {
+          "id": "leave",
+          "text": "Can leave"
+        },
+        {
+          "id": "tokenize",
+          "text": "Leave only after tokenizing"
+        },
+        {
+          "id": "never",
+          "text": "Never leaves"
+        }
+      ],
+      "rounds": [
+        {
+          "id": "r1",
+          "text": "District-level summary",
+          "answer": "leave"
+        },
+        {
+          "id": "r2",
+          "text": "Beneficiary list with phone numbers",
+          "answer": "never"
+        },
+        {
+          "id": "r3",
+          "text": "Survey answers with names (not yet coded)",
+          "answer": "tokenize"
+        }
+      ],
+      "seconds": 10,
+      "fuel": {
+        "perRight": 5
+      },
+      "stamp": "CLEARED"
+    },
+    {
+      "id": "q8",
+      "kind": "question",
+      "scenario": "AI helped build an app in two days. Six months later, the person who built it has gone.",
+      "question": "Pick the 3 things you wish you'd sorted before launch.",
+      "type": "pickn",
+      "n": 3,
+      "items": [
+        {
+          "id": "owner",
+          "text": "Who owns the code"
+        },
+        {
+          "id": "understands",
+          "text": "Who understands how it works"
+        },
+        {
+          "id": "data",
+          "text": "What happens to the data"
+        },
+        {
+          "id": "cost",
+          "text": "What it costs to run"
+        },
+        {
+          "id": "handover",
+          "text": "Whether someone else can take over"
+        },
+        {
+          "id": "design",
+          "text": "A fancier design"
+        },
+        {
+          "id": "features",
+          "text": "More features"
+        },
+        {
+          "id": "sooner",
+          "text": "Launching sooner"
+        }
+      ],
+      "decoys": [
+        "design",
+        "features",
+        "sooner"
+      ],
+      "reveal": "Success isn't how fast it was built. It's whether it keeps working for the people who depend on it.",
+      "moderatorTalkingPoints": [
+        "Which of these has bitten your organisation before?"
+      ],
+      "scored": true
+    },
+    {
+      "id": "p5",
+      "kind": "pitstop",
+      "pitType": "mechanic",
+      "place": "Mechanic",
       "welcome": "Mechanic ahead",
       "board": "Vikram's app throws an error.",
       "tips": [
@@ -270,133 +815,151 @@
         "Ask for the smallest fix.",
         "Still stuck? Ask your community."
       ],
-      "fuel": { "add": 5 },
+      "fuel": {
+        "add": 5
+      },
       "stamp": "FIXED"
     },
     {
-      "id": "q7", "kind": "question", "place": "Sagar", "km": 1440,
-      "languages": ["hi"], "landscape": "bundelkhand",
-      "welcome": "Welcome to Sagar",
-      "personaName": "Aman", "role": "Engineer", "orgType": "Livelihoods NGO",
-      "portrait": { "skin": "#93603D", "hair": "curly", "hairColor": "#1A1A1A", "top": "#F5F1E6", "extra": "none" },
-      "shift": "From tool users to tool makers.",
-      "scenario": "Aman is teaching 20 colleagues to build their own small tools with AI.",
-      "question": "Rank these first builds from lowest to highest risk.",
-      "type": "rank",
-      "items": [
-        { "id": "faq", "text": "Public FAQ page about government schemes" },
-        { "id": "attendance", "text": "Training attendance tracker" },
-        { "id": "donors", "text": "Donor database" },
-        { "id": "loans", "text": "Loan system with members' personal details" }
-      ],
-      "firstItem": "faq",
-      "lastItem": "loans",
-      "reveal": "Everyone can build. Start where the data is public, then level up with help.",
-      "moderatorTalkingPoints": ["What's a safe first build for your team?"],
-      "scored": true
-    },
-    {
-      "id": "p5", "kind": "pitstop", "pitType": "checkpost", "place": "Checkpost", "km": 1540,
-      "languages": ["hi"], "landscape": "bundelkhand",
-      "welcome": "Checkpost ahead",
-      "board": "Data check!",
-      "question": "Where does this go?",
+      "id": "q9",
+      "kind": "question",
+      "question": "Custom-built to do exactly what you want, or an existing open-source tool that already does 80% of it?",
+      "type": "choose",
       "options": [
-        { "id": "cloud", "text": "Cloud AI" },
-        { "id": "offline", "text": "Offline AI" },
-        { "id": "dont", "text": "Don't share" }
+        {
+          "id": "A",
+          "text": "Custom-built"
+        },
+        {
+          "id": "B",
+          "text": "Open-source, adapt the rest"
+        },
+        {
+          "id": "C",
+          "text": "Depends, show me both first"
+        }
       ],
-      "rounds": [
-        { "id": "r1", "text": "Our published annual report", "answer": "cloud" },
-        { "id": "r2", "text": "A list of beneficiaries with phone numbers", "answer": "dont" },
-        { "id": "r3", "text": "Anonymised survey totals", "answer": "cloud" }
+      "reveal": "There's no single right answer. Ask who will maintain it, and whether someone already solved most of it.",
+      "moderatorTalkingPoints": [
+        "Share a real Tech4Good story here."
       ],
-      "seconds": 10,
-      "fuel": { "perRight": 5 },
-      "stamp": "CLEARED"
+      "scored": false
     },
     {
-      "id": "q8", "kind": "question", "place": "Jhansi", "km": 1660,
-      "languages": ["hi"], "landscape": "bundelkhand",
-      "welcome": "Welcome to Jhansi",
-      "personaName": "Ramesh", "role": "Coordinator", "orgType": "Oral history and heritage group",
-      "portrait": { "skin": "#7A4B2E", "hair": "bald", "hairColor": "#E8E2D4", "top": "#F5F1E6", "extra": "white-moustache" },
-      "shift": "Open-source models can run offline.",
-      "scenario": "The village wants its oral histories transcribed with AI, but some stories are sacred.",
-      "question": "Where should each one go?",
-      "type": "match",
-      "buckets": [
-        { "id": "cloud", "text": "Cloud AI" },
-        { "id": "offline", "text": "Offline AI on our own laptop" },
-        { "id": "dont", "text": "Don't digitise" }
-      ],
-      "items": [
-        { "id": "songs", "text": "Festival songs meant for the public" },
-        { "id": "stories", "text": "Elders' everyday life stories, shared with consent" },
-        { "id": "sacred", "text": "Sacred ritual knowledge" },
-        { "id": "names", "text": "Names and ages of the storytellers" }
-      ],
-      "answers": { "songs": "cloud", "stories": "offline", "sacred": "dont", "names": "offline" },
-      "keyMatch": ["sacred", "songs"],
-      "reveal": "Open-source AI can run offline on a laptop, so sensitive knowledge stays in the community's hands. And the community decides what is shared at all.",
-      "moderatorTalkingPoints": ["Who decides in your community?"],
-      "scored": true
-    },
-    {
-      "id": "p6", "kind": "pitstop", "pitType": "chai", "place": "Chai stall", "km": 1770,
-      "languages": ["hi"], "landscape": "yamuna",
+      "id": "p6",
+      "kind": "pitstop",
+      "pitType": "chai",
+      "place": "Chai stall",
       "welcome": "Chai break ahead",
       "board": "Chai break.",
-      "prompt": "Turn to your neighbour: what problem would you solve yourself?",
+      "prompt": "Turn to your neighbour: which of these people have you been at some point: Meera, Lakshmi, Asha or Imran?",
       "seconds": 30,
       "stamp": "CHAI"
     },
     {
-      "id": "q9", "kind": "question", "place": "Agra", "km": 1890,
-      "languages": ["hi", "ur"], "landscape": "yamuna",
-      "welcome": "Welcome to Agra",
-      "personaName": "Shabana", "role": "Coordinator", "orgType": "Women artisans' collective",
-      "portrait": { "skin": "#9A6644", "hair": "dupatta", "hairColor": "#1F5A3D", "top": "#B5462B", "extra": "nosering" },
-      "shift": "DIY means you own it.",
-      "scenario": "Six months after a volunteer built Shabana's WhatsApp catalogue, the volunteer leaves and it breaks.",
-      "question": "What should the collective do?",
+      "id": "q10",
+      "kind": "question",
+      "question": "Which perspective is most often missing when organisations build technology?",
       "type": "choose",
       "options": [
-        { "id": "A", "text": "Rebuild from scratch" },
-        { "id": "B", "text": "Hire an agency" },
-        { "id": "C", "text": "Fix it ourselves with AI, written notes on how it works, and community help" },
-        { "id": "D", "text": "Give up on it" }
+        {
+          "id": "A",
+          "text": "The people who know the data"
+        },
+        {
+          "id": "B",
+          "text": "The community"
+        },
+        {
+          "id": "C",
+          "text": "The people who see the risks"
+        },
+        {
+          "id": "D",
+          "text": "The people who'll maintain it"
+        }
       ],
-      "answer": "C",
-      "reveal": "Building is easy now. Keeping it running is the new skill: keep it simple, write it down, find your community.",
-      "moderatorTalkingPoints": ["Share a real Tech4Good story here."],
-      "scored": true
+      "reveal": "The researcher understands the data. The coordinator understands the people. The data steward understands the risks. The maintainer understands the infrastructure. The best solutions bring them together.",
+      "moderatorTalkingPoints": [
+        "Ask which of these people is missing from their own team."
+      ],
+      "scored": false
     },
     {
-      "id": "p7", "kind": "pitstop", "pitType": "petrol", "place": "Petrol pump", "km": 2000,
-      "languages": ["hi"], "landscape": "yamuna",
+      "id": "p7",
+      "kind": "pitstop",
+      "pitType": "petrol",
+      "place": "Petrol pump",
       "welcome": "Fuel stop ahead",
-      "board": "Keep it simple, document it, find your community.",
+      "board": "Bring the right people into the journey.",
       "poll": {
         "question": "Will your organisation try this?",
-        "options": [ { "id": "yes", "text": "Yes" }, { "id": "notyet", "text": "Not yet" } ]
+        "options": [
+          {
+            "id": "yes",
+            "text": "Yes"
+          },
+          {
+            "id": "notyet",
+            "text": "Not yet"
+          }
+        ]
       },
-      "fuel": { "shareYes": 20 },
+      "fuel": {
+        "shareYes": 20
+      },
       "stamp": "FUEL"
     },
     {
-      "id": "q10", "kind": "question", "place": "Travancore Palace, New Delhi", "km": 2100,
-      "languages": ["hi"], "landscape": "palace",
-      "welcome": "Welcome to Travancore Palace",
-      "personaName": "You", "role": "93 organisations", "orgType": "Everyone in this room",
-      "portrait": { "group": true },
+      "id": "q11",
+      "kind": "question",
       "shift": "Your turn.",
-      "scenario": "You've seen ten ways building has changed. Now it's your move.",
-      "question": "What problem will you build a solution for in the next 30 days?",
-      "type": "wordcloud",
+      "question": "Answer one or both.",
+      "type": "dualcloud",
       "maxLength": 40,
-      "reveal": "Look at what this room is going to build.",
-      "moderatorTalkingPoints": ["Read out three answers from the cloud.", "Invite people to the Lab."],
+      "parts": [
+        {
+          "id": "build",
+          "title": "Build",
+          "color": "green",
+          "text": "One thing you'll explore differently in your own work after this journey."
+        },
+        {
+          "id": "never",
+          "title": "Never",
+          "color": "red",
+          "text": "One thing AI should never do in your work."
+        }
+      ],
+      "reveal": "Technology is not the destination. The people and communities we serve are.",
+      "mirror": {
+        "id": "road6",
+        "question": "Where will your organisation be on the AI road in 6 months?",
+        "compareWith": "q1",
+        "options": [
+          {
+            "id": "parked",
+            "text": "Parked"
+          },
+          {
+            "id": "learning",
+            "text": "Learning to ride"
+          },
+          {
+            "id": "daily",
+            "text": "Riding daily"
+          },
+          {
+            "id": "own",
+            "text": "Building our own"
+          }
+        ]
+      },
+      "moderatorTalkingPoints": [
+        "Read out three answers from each cloud.",
+        "After the mirror, compare today with six months from now.",
+        "Invite people to the Lab."
+      ],
       "scored": false
     }
   ]

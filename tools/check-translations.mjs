@@ -1,6 +1,7 @@
 // Lists missing / empty / extra keys and the "reviewed" flag for every language.
 //
 //   node tools/check-translations.mjs                 report for all languages
+//   node tools/check-translations.mjs --review        also list every changed key that needs review ("needsReview")
 //   node tools/check-translations.mjs --new xx "Name" "NativeName" [rtl]
 //                                                     create content/xx.json with every key, empty
 //   node tools/check-translations.mjs --sync          add any new English keys (empty) to every file
@@ -53,7 +54,8 @@ for (const f of files) {
     const v = getPath(tr, k);
     return typeof v !== "string" || !v.trim();
   });
-  const extra = flatten(tr).filter((k) => !["reviewed"].includes(k) && !k.startsWith("language.") && !keys.includes(k));
+  const extra = flatten(tr).filter((k) => !["reviewed", "needsReview"].includes(k) && !k.startsWith("language.") && !keys.includes(k));
+  const review = (tr.needsReview || []).filter((k) => keys.includes(k)); // keys whose English changed since the last review
   const brokenVars = keys.filter((k) => {
     const v = getPath(tr, k);
     if (typeof v !== "string" || !v.trim()) return false;
@@ -61,7 +63,8 @@ for (const f of files) {
     return want.some((w) => !v.includes(w));
   });
   const status = tr.reviewed === true ? "reviewed ✓" : "NOT reviewed";
-  console.log(`${f.padEnd(9)} ${String(tr.language?.name || "?").padEnd(10)} ${status.padEnd(13)} missing ${missing.length}, extra ${extra.length}${brokenVars.length ? `, placeholders lost ${brokenVars.length}` : ""}`);
+  console.log(`${f.padEnd(9)} ${String(tr.language?.name || "?").padEnd(10)} ${status.padEnd(13)} missing ${missing.length}, extra ${extra.length}, to review ${review.length}${brokenVars.length ? `, placeholders lost ${brokenVars.length}` : ""}`);
+  if (args.includes("--review")) for (const k of review) console.log(`   review: ${k}`);
   for (const k of missing) console.log(`   missing: ${k}`);
   for (const k of extra) console.log(`   extra (ignored): ${k}`);
   for (const k of brokenVars) console.log(`   keep the {placeholder} in: ${k}`);
