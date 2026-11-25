@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M8 60V26a24 24 0 0 1 48 0v34z' fill='%23F5F1E6' stroke='%231A1A1A' stroke-width='4'/%3E%3Cpath d='M8 26a24 24 0 0 1 48 0z' fill='%23F2C230' stroke='%231A1A1A' stroke-width='4'/%3E%3C/svg%3E" />
+  <title>The Ride: Bengaluru to Travancore Palace</title>
+  <link rel="stylesheet" href="css/fonts-intl.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/presenter.css" />
+</head>
+<body class="presenter">
+  <div id="viewport">
+    <div id="stage" class="band-tall">
+      <header id="hud">
+        <div class="plate">The Ride</div>
+        <div class="progress">
+          <div class="progress-kind" id="hudKind">Start</div>
+          <div class="progress-place" id="hudPlace">Bengaluru</div>
+        </div>
+        <div class="odo" aria-label="Distance ridden">
+          <div class="odo-digits" id="odo"></div>
+          <div class="odo-unit">km</div>
+        </div>
+        <div class="fuel" id="fuel" aria-label="Fuel">
+          <svg viewBox="0 0 190 104" aria-hidden="true">
+            <path d="M14 96 A81 81 0 0 1 37.7 38.7" class="arc" stroke="#B5462B" />
+            <path d="M40.5 36 A81 81 0 0 1 149.5 36" class="arc" stroke="#F2C230" />
+            <path d="M152.3 38.7 A81 81 0 0 1 176 96" class="arc" stroke="#1F5A3D" />
+            <text x="8" y="104" font-family="Signage" font-weight="800" font-size="20">E</text>
+            <text x="172" y="104" font-family="Signage" font-weight="800" font-size="20">F</text>
+            <g id="needle" class="needle"><line x1="95" y1="96" x2="95" y2="26" stroke="#1A1A1A" stroke-width="7" stroke-linecap="round" /><circle cx="95" cy="96" r="10" fill="#1A1A1A" /></g>
+          </svg>
+          <div class="fuel-read"><span>FUEL</span> <b id="fuelPct">100%</b></div>
+          <div class="fuel-delta" id="fuelDelta"></div>
+        </div>
+        <div class="log" id="log" aria-label="Travel log">
+          <div class="log-title">Travel log</div>
+          <div class="log-slots" id="logSlots"></div>
+        </div>
+      </header>
+
+      <main id="scene"></main>
+
+      <div id="bandWrap"><svg id="band" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg></div>
+
+      <div id="qrCard" class="qr-card hidden">
+        <div class="qr" id="qrSmall"></div>
+        <div><b>Scan to vote</b><span id="qrUrl"></span><em id="qrCount"></em></div>
+      </div>
+
+      <div id="timerBox" class="timer-box hidden" aria-live="polite">
+        <svg viewBox="0 0 234 234"><circle cx="117" cy="117" r="110" class="timer-ring" id="timerRing" /></svg>
+        <div class="timer-in"><small id="timerLabel">Timer</small><b id="timerNum">0:30</b></div>
+      </div>
+
+      <nav id="bar">
+        <span class="pill" id="barWhere">Start</span>
+        <span class="pill" id="barMode">HOST</span>
+        <span class="pill hidden" id="barVotes">0 votes</span>
+        <span id="barHint"></span>
+        <button data-act="back" title="←">◀ Back</button>
+        <button data-act="closeVote" id="btnClose" class="hidden" title="V">Close vote</button>
+        <button data-act="word" id="btnWord" class="hidden" title="W">Add word</button>
+        <button data-act="reveal" title="R">Reveal</button>
+        <button data-act="next" class="primary" title="→">Next ▶</button>
+        <button data-act="timer" id="btnTimer" title="T">Timer</button>
+        <button data-act="mode" title="L">Mode</button>
+        <button data-act="reset" class="danger">Reset</button>
+      </nav>
+
+      <div id="toast" class="toast" role="status"></div>
+      <div id="modal" class="modal hidden"><div class="modal-box" id="modalBox"></div></div>
+    </div>
+  </div>
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="js/presenter.js"></script>
+</body>
+</html>

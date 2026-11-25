@@ -1,0 +1,20 @@
+name = "the-ride"
+main = "worker/index.js"
+compatibility_date = "2025-09-01"
+
+# Static files (presenter screen, voting page, content.json, fonts) live in ./public
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "none"
+
+[[durable_objects.bindings]]
+name = "GAME"
+class_name = "Game"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Game"]
+
+# The presenter PIN is a secret:  npx wrangler secret put ADMIN_PIN
+# For local `wrangler dev`, put ADMIN_PIN=1234 in a .dev.vars file.
