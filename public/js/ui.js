@@ -7,9 +7,15 @@ import { esc, fmt, LETTERS } from "./route.js";
 const BADGE = { compass: "explore", binoculars: "visibility", hands: "diversity_3", padlock: "lock", wrench: "build" };
 export const personaIcon = (C, pid) => BADGE[C.personas[pid]?.badge] || "explore";
 
-/** A persona pill: their colour, their object, a label (their name by default). */
+/** A persona's name with who they are: "Meera – the researcher" (the bikes' name tags use the name alone). */
+export const who = (C, pid) => {
+  const p = C.personas[pid];
+  return p?.title ? `${p.name} – ${p.title}` : p?.name || "";
+};
+
+/** A persona pill: their colour, their object, a label (their name and who they are, by default). */
 export function pill(C, pid, label, cls = "label-lg") {
-  return `<span class="pill persona" data-p="${esc(pid)}">${icon(personaIcon(C, pid))}<span class="${cls}">${esc(label ?? C.personas[pid].name)}</span></span>`;
+  return `<span class="pill persona" data-p="${esc(pid)}">${icon(personaIcon(C, pid))}<span class="${cls}">${esc(label ?? who(C, pid))}</span></span>`;
 }
 
 /** The persona that colours a stop: its own, or the crew's (the pump and the palace have none). */

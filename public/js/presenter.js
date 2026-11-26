@@ -8,7 +8,7 @@ import { buildScreens, nextLabel, convoyAt, routeAt, stepOf, stopOf, placeOf, ph
 import { tripAt, routes, movesClock, optionOf, clockText, deltaText, durText, rupeeText, vsIdeal, effectChips, typeLabel, longText, idealMinutes, savedAndCost } from "./engine.js";
 import { PAL, lightOf, groundOf, vergeSVG } from "./scenes.js";
 import { icon } from "./icons.js";
-import { pill, personaIcon, stopPersona, bike, milestone, route, optionCard, qr, clock, nut, clockFace, chipsHTML, detourSign, avatar } from "./ui.js";
+import { pill, personaIcon, stopPersona, bike, milestone, route, optionCard, qr, clock, nut, clockFace, chipsHTML, detourSign, avatar, who } from "./ui.js";
 
 const $ = (s) => document.querySelector(s);
 const STORE = "ride.state.v12";
@@ -520,7 +520,7 @@ function coldHTML() {
     const p = C.personas[c.persona];
     return `<article class="cc" data-p="${esc(c.persona)}" data-k="${k}"><div class="cc-in">
       <div class="cc-face cc-front"><span class="avatar cc-av mystery">?</span><span class="cc-name">???</span><span class="label-sm caps cc-role">${esc(c.place)}</span><span class="cc-bars"><i></i><i></i><i></i></span></div>
-      <div class="cc-face cc-back">${avatar(C, c.persona, "cc-av")}<span class="cc-name">${esc(p.name)}</span><span class="label-sm caps cc-role">${esc(p.role)}</span><p class="cc-line balance">${esc(c.hook || c.line)}</p></div>
+      <div class="cc-face cc-back">${avatar(C, c.persona, "cc-av")}<span class="cc-name">${esc(p.name)}</span><span class="cc-tag">${esc(p.role)}</span><p class="cc-line balance">${esc(c.hook || c.line)}</p></div>
     </div></article>`;
   }).join("");
   return `<div class="card coldcards" data-p="crew"><div class="cc-grid">${cards}</div></div>`;
@@ -528,7 +528,7 @@ function coldHTML() {
 /** The next scene: the four of them in a row, and the line that sets the ride going. */
 function coldLineHTML() {
   const CO = C.coldOpen;
-  return `<div class="card prologue coldline" data-p="crew"><div class="cl-row">${CO.cards.map((c, k) => `<span class="cl-who" style="--k:${k}">${avatar(C, c.persona, "cl-av")}<span class="label-lg">${esc(C.personas[c.persona].name)}</span></span>`).join("")}</div><h1 class="cl-line balance">${esc(CO.line || "")}</h1>${CO.lineYou ? `<p class="cl-you balance">${esc(CO.lineYou)}</p>` : ""}${CO.cue ? `<span class="cl-cue label-lg">${icon("front_hand")}${esc(CO.cue)}</span>` : ""}</div>`;
+  return `<div class="card prologue coldline" data-p="crew"><div class="cl-row">${CO.cards.map((c, k) => `<span class="cl-who" style="--k:${k}">${avatar(C, c.persona, "cl-av")}<span class="label-lg">${esc(C.personas[c.persona].name)}</span><span class="cc-tag sm" data-p="${esc(c.persona)}">${esc(C.personas[c.persona].role)}</span></span>`).join("")}</div><h1 class="cl-line balance">${esc(CO.line || "")}</h1>${CO.lineYou ? `<p class="cl-you balance">${esc(CO.lineYou)}</p>` : ""}${CO.cue ? `<span class="cl-cue label-lg">${icon("front_hand")}${esc(CO.cue)}</span>` : ""}</div>`;
 }
 function patchCold(root, s, forward) {
   root.querySelectorAll(".cc").forEach((c) => {
@@ -661,7 +661,7 @@ function insightHTML(step) {
 }
 function gatherHTML(stop) {
   return `<div class="card stop gather" data-p="crew"><div class="col-main">
-    <div class="opts n4 travellers">${stop.gathering.map((g) => `<div class="opt trav" data-p="${esc(g.persona)}"><div class="opt-top"><span class="who label-lg">${icon(personaIcon(C, g.persona))}${esc(C.personas[g.persona].name)}</span></div><p class="t headline-md">“${esc(g.line)}”</p></div>`).join("")}</div>
+    <div class="opts n4 travellers">${stop.gathering.map((g) => `<div class="opt trav" data-p="${esc(g.persona)}"><div class="opt-top"><span class="who label-lg">${icon(personaIcon(C, g.persona))}${esc(who(C, g.persona))}</span></div><p class="t headline-md">“${esc(g.line)}”</p></div>`).join("")}</div>
   </div></div>`;
 }
 function closingHTML(s, stop) {

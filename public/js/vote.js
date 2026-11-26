@@ -5,7 +5,7 @@
  */
 import { buildScreens, phaseOf, stepOf, stopOf, placeOf, isVoteStep, filled, fmt, esc } from "./route.js";
 import { icon } from "./icons.js";
-import { pill, personaIcon, stopPersona, questionOf, clock } from "./ui.js";
+import { pill, personaIcon, stopPersona, questionOf, clock, who } from "./ui.js";
 import { movesClock, optionOf, effectPhrase, clockText } from "./engine.js";
 
 const $ = (s) => document.querySelector(s);
@@ -75,7 +75,7 @@ function chrome(s, stop) {
   const pid = stopPersona(stop);
   $("#shell").dataset.p = pid;
   const place = placeOf(C, stop);
-  const label = stop ? (stop.persona && !["arrive", "ride"].includes(s?.beat) ? `${C.personas[stop.persona].name} · ${place?.name || stop.spot}` : place?.name || stop.spot) : C.title;
+  const label = stop ? (stop.persona && stop.persona !== "crew" && !["arrive", "ride"].includes(s?.beat) ? who(C, stop.persona) : place?.name || stop.spot) : C.title;
   $("#where").innerHTML = pill(C, pid, label, "label-sm");
   if (place) lastKm = place.km;
   $("#km").textContent = P("progress", { km: lastKm.toLocaleString("en-IN"), total: C.places[C.places.length - 1].km.toLocaleString("en-IN") });
@@ -122,14 +122,14 @@ function render(force) {
   switch (s.beat) {
     case "lobby": return (app.innerHTML = card("check", C.lobby.phone, P("anonymous")));
     case "cold": case "title": case "crew": case "fact": case "crewClose": case "arrive": case "gather": case "handover":
-      if (s.beat === "handover" && persona && stop.persona !== "crew") return (app.innerHTML = card(personaIcon(C, stop.persona), P("joins", { name: persona.name }), P("lookUp")));
+      if (s.beat === "handover" && persona && stop.persona !== "crew") return (app.innerHTML = card(personaIcon(C, stop.persona), P("joins", { name: who(C, stop.persona) }), P("lookUp")));
       return (app.innerHTML = card("visibility", P("lookUp")));
     case "ignite": case "fired": return (app.innerHTML = card("bolt", C.ignition.phone));
     case "ride": {
       const dest = placeOf(C, stop)?.name;
       return (app.innerHTML = card(stop.type === "pump" ? "local_gas_station" : "route", dest ? P("riding", { place: dest }) : `${C.ui.onTheRoad}.`, "", "waiting"));
     }
-    case "listen": return (app.innerHTML = card("record_voice_over", P("listenTo", { name: stop.persona === "crew" ? persona.short : persona.name })));
+    case "listen": return (app.innerHTML = card("record_voice_over", P("listenTo", { name: stop.persona === "crew" ? persona.short : who(C, stop.persona) })));
     case "look": return (app.innerHTML = card("visibility", P("lookAtScreen")));
     case "card":
       return (app.innerHTML = `${card("visibility", P("lookUp"))}${filled(step.link) ? `<a class="v-link label-lg" href="${esc(step.link)}" target="_blank" rel="noopener">${icon("open_in_new")}${esc(P("openLink"))}</a>` : ""}`);
