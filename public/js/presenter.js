@@ -1,53 +1,56 @@
-/* The Ride — projector.
- * The route is 4 stops plus the arrival (content/en.json → stops), each an ordered list of steps.
- * The bike rides, the milestone appears and the persona is introduced once per stop (the arrival);
- * steps inside a stop change only the main panel.
- * Screens: lobby → intro → per stop: arrive → each step's phases (route.js → phasesOf) → … → closing.
+/* The Ride: projector — the one screen the presenter runs the whole session from.
+ * The route is one ordered list of screens (route.js → buildScreens), one per story beat. The dock's main
+ * button (or → / Space / a clicker) moves to the next screen. Rides and the ignition play by themselves.
  * Everything is saved in localStorage, so a reload resumes exactly.
- * The moderator view follows through a BroadcastChannel (same laptop, offline) and the server.
+ * Live is the default: the Worker relays votes from phones. If it is silent for 5 s, Host mode takes over.
  */
-import { flatten, phasesOf, isVote, isQuestion, isCloud, choicesOf, personaOf, milestoneParts, stopTotal, filled, fmt, nextLabel, placeholdersOf } from "./route.js";
-import { buildBand, emblem, PIT_ICONS } from "./scenery.js";
-import { isProfane } from "./profanity.js";
+import { buildScreens, nextLabel, convoyAt, routeAt, stepOf, stopOf, placeOf, phaseOf, pumpSkip, placeholdersOf, filled, fmt, esc, km, isVoteStep } from "./route.js";
+import { icon } from "./icons.js";
+import { pill, personaIcon, stopPersona, bike, milestone, route, fuelGauge, optionCard, qr, clock } from "./ui.js";
 
 const $ = (s) => document.querySelector(s);
-const STORE = "ride.state.v5"; // v5: 4 stops + arrival, fuel by turnout
+const STORE = "ride.state.v6";
 const PIN_KEY = "ride.pin";
 const MUTE_KEY = "ride.muted";
-const RIDE_MS = 3000; // the ride between stops
-const LETTERS = "ABCDEFGH";
-const channel = "BroadcastChannel" in window ? new BroadcastChannel("the-ride") : null;
+const FIRE_MS = 2600;
+const LOST_AFTER_MS = 5000;
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-let C, STEPS, last, band;
-const stats = { arrivals: [], screens: [] }; // for the tests: every arrival (stop, km) and every screen shown, in order
-let S;
+let C, SCREENS, last, S;
 let busy = false;
-let sceneKey = "";
+let prevI = null; // the screen rendered last (to animate only forward, one step at a time)
 const live = { on: false, ws: null, wsOpen: false, pollTimer: null, pingTimer: null, reconnectTimer: null, chain: Promise.resolve(), lastOk: 0, lost: false, canReturn: false, riders: 0, lastCmd: 0, hostOnly: false };
-const LOST_AFTER_MS = 5000; // Live server silent this long: switch to Host Mode
-const openedAt = {}; // slot → when voting opened (this session)
+const openedAt = {};
+let lastToast = { text: "", at: 0 };
 
-const freshVote = (slot, duration) => ({ slot, duration, endsAt: null, left: duration * 1000, paused: false, locked: false });
-const fresh = () => ({
-  i: 0, phase: "lobby",
-  manual: {}, final: {}, closed: {}, tallies: {},
-  words: [], liveWords: [], pending: 0,
-  timer: { endsAt: null, duration: 60 },
-  vote: freshVote(null, 30),
-  round: null, reached: 0,
-});
+const fresh = () => ({ i: 0, closed: {}, final: {}, tallies: {}, manual: {}, vote: { slot: null }, think: { key: null }, round: null });
+const U = (k, v) => fmt(C.ui[k], v);
+const cfg = (k, d) => C?.config?.[k] ?? d;
+const scr = (i = S.i) => SCREENS[i];
+const tallyOf = (slot) => S.tallies[slot] || { n: 0, counts: {} };
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+const isPrivateHost = (h) => /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?$)/.test(h);
+const voteUrl = () => (filled(cfg("publicUrl", "")) ? cfg("publicUrl", "").replace(/\/+$/, "") : location.origin) + "/v";
+const shortUrl = () => voteUrl().replace(/^https?:\/\//, "");
 
-// ------------------------------------------------------------------ sound (soft, generated, M mutes it)
+function fit() {
+  document.documentElement.style.setProperty("--scale", Math.min(innerWidth / 1440, innerHeight / 810));
+}
+addEventListener("resize", fit);
+fit();
+
+// ------------------------------------------------------------------ sound (generated; mute from the dock or M)
 const sound = {
   ctx: null,
+  idle: null,
   muted: (() => { try { return localStorage.getItem(MUTE_KEY) === "1"; } catch { return false; } })(),
   wake() {
-    if (this.ctx) return this.ctx.state === "suspended" && this.ctx.resume().catch(() => {});
-    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch {}
+    if (!this.ctx) try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return; }
+    if (this.ctx.state === "suspended") this.ctx.resume().then(() => syncSound()).catch(() => {});
   },
+  ok() { return !this.muted && this.ctx && this.ctx.state === "running"; },
   tone(freq, dur, at = 0, gain = 0.05) {
-    if (this.muted || !this.ctx || this.ctx.state !== "running") return;
+    if (!this.ok()) return;
     const t = this.ctx.currentTime + at;
     const o = this.ctx.createOscillator();
     const g = this.ctx.createGain();
@@ -59,68 +62,115 @@ const sound = {
     o.start(t);
     o.stop(t + dur + 0.02);
   },
-  tick() { this.tone(1046, 0.06, 0, 0.035); },
+  tick() { this.tone(1046, 0.06, 0, 0.03); },
   lock() { this.tone(523, 0.12, 0, 0.05); this.tone(392, 0.16, 0.09, 0.045); },
   reveal() { this.tone(659, 0.14, 0, 0.05); this.tone(988, 0.26, 0.12, 0.05); },
-  fuel() { this.tone(523, 0.1, 0, 0.04); this.tone(659, 0.1, 0.08, 0.04); this.tone(784, 0.2, 0.16, 0.045); },
+  /** A soft engine idle: two low saws through a low-pass filter, with a slow throb. */
+  startIdle() {
+    if (this.idle || !this.ok()) return;
+    const c = this.ctx;
+    const out = c.createGain();
+    out.gain.setValueAtTime(0.0001, c.currentTime);
+    out.gain.exponentialRampToValueAtTime(0.06, c.currentTime + 1.5);
+    const lp = c.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 170;
+    const throb = c.createGain();
+    throb.gain.value = 0.7;
+    const lfo = c.createOscillator();
+    const lfoG = c.createGain();
+    lfo.frequency.value = 9;
+    lfoG.gain.value = 0.3;
+    lfo.connect(lfoG).connect(throb.gain);
+    const oscs = [38, 57].map((f) => {
+      const o = c.createOscillator();
+      o.type = "sawtooth";
+      o.frequency.value = f;
+      o.connect(lp);
+      return o;
+    });
+    lp.connect(throb).connect(out).connect(c.destination);
+    [...oscs, lfo].forEach((o) => o.start());
+    this.idle = { out, oscs: [...oscs, lfo] };
+  },
+  stopIdle() {
+    if (!this.idle) return;
+    const { out, oscs } = this.idle;
+    this.idle = null;
+    try {
+      const t = this.ctx.currentTime;
+      out.gain.cancelScheduledValues(t);
+      out.gain.setValueAtTime(Math.max(0.0001, out.gain.value), t);
+      out.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      oscs.forEach((o) => o.stop(t + 0.9));
+    } catch {}
+  },
+  /** The roar on "Fire it up": a rising saw, a burst, then settling into the ride. */
+  roar() {
+    if (!this.ok()) return;
+    const c = this.ctx;
+    const t = c.currentTime;
+    const o = c.createOscillator();
+    const o2 = c.createOscillator();
+    o.type = o2.type = "sawtooth";
+    const lp = c.createBiquadFilter();
+    lp.type = "lowpass";
+    const g = c.createGain();
+    o.frequency.setValueAtTime(45, t);
+    o.frequency.exponentialRampToValueAtTime(190, t + 1.1);
+    o.frequency.exponentialRampToValueAtTime(120, t + 2.2);
+    o2.frequency.setValueAtTime(68, t);
+    o2.frequency.exponentialRampToValueAtTime(280, t + 1.1);
+    o2.frequency.exponentialRampToValueAtTime(180, t + 2.2);
+    lp.frequency.setValueAtTime(250, t);
+    lp.frequency.exponentialRampToValueAtTime(1300, t + 1.1);
+    lp.frequency.exponentialRampToValueAtTime(500, t + 2.4);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.12, t + 0.25);
+    g.gain.setValueAtTime(0.12, t + 1.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+    o.connect(lp);
+    o2.connect(lp);
+    lp.connect(g).connect(c.destination);
+    o.start(t); o2.start(t);
+    o.stop(t + 2.7); o2.stop(t + 2.7);
+  },
 };
 addEventListener("keydown", () => sound.wake(), { capture: true });
 addEventListener("pointerdown", () => sound.wake(), { capture: true });
+/** The engine idles under the cold open and the title card only. */
+function syncSound() {
+  if (!S) return;
+  const b = scr().beat;
+  if ((b === "cold" || b === "title") && sound.ok()) sound.startIdle();
+  else sound.stopIdle();
+  announce();
+}
 function toggleMute() {
   sound.muted = !sound.muted;
   try { localStorage.setItem(MUTE_KEY, sound.muted ? "1" : "0"); } catch {}
+  if (sound.muted) sound.stopIdle();
+  syncSound();
   toast(sound.muted ? "Sound off" : "Sound on");
 }
 
-// ------------------------------------------------------------------ helpers
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const U = (k, vars) => fmt(C.ui[k], vars);
-const cfg = (k, d) => C?.config?.[k] ?? d;
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
-const step = (i = S.i) => STEPS[i];
-const stopOf = (s = step()) => C.stops[s.stopIndex];
-const slotOf = (i = S.i) => STEPS[i].id; // votes, tallies and word clouds are keyed by step id
-const tallyOf = (slot) => S.tallies[slot] || { n: 0, counts: {} };
-const voting = () => ["ask", "locked", "reveal"].includes(S.phase) && isVote(step());
-const isPrivateHost = (h) => /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?$)/.test(h);
-const voteUrl = () => (filled(cfg("publicUrl", "")) ? cfg("publicUrl", "").replace(/\/+$/, "") : location.origin) + "/v";
-const shortUrl = () => voteUrl().replace(/^https?:\/\//, "");
-/** A stable name for the screen on show (for the tests' forward walk). */
-function screenId() {
-  if (S.phase === "lobby") return "lobby";
-  if (S.phase === "arrive") return `arrive:${stopOf().id}`;
-  return phasesOf(step()).length > 1 ? `${step().id}:${S.phase}` : step().id;
-}
-function voteSeconds(s = step()) {
-  return isCloud(s) ? cfg("cloudVoteSeconds", 60) : cfg("voteSeconds", 30);
-}
-
-function fit() {
-  document.documentElement.style.setProperty("--scale", Math.min(innerWidth / 1920, innerHeight / 1080));
-}
-addEventListener("resize", fit);
-fit();
-
-// ------------------------------------------------------------------ fuel = participation
-/** Fuel starts at 50%. Each question adds (answers ÷ riders) × 10%, each pump × 20%. Capped at 100%, never lost. */
-function fuelGain(s, fin) {
-  if (!fin) return 0;
-  return fin.ratio * (s.type === "pump" ? cfg("fuelPerPump", 20) : cfg("fuelPerQuestion", 10));
-}
+// ------------------------------------------------------------------ fuel = participation (quiet, never lost)
 function fuel() {
   let f = cfg("fuelStart", 50);
-  for (const s of STEPS) f = Math.min(100, f + fuelGain(s, S.final[s.id]));
-  return Math.round(f);
+  for (const s of SCREENS) {
+    if (s.beat !== "locked") continue;
+    const fin = S.final[s.slot];
+    if (fin) f += fin.ratio * (stepOf(C, s)?.type === "pump" ? cfg("fuelPerPump", 20) : cfg("fuelPerVote", 10));
+  }
+  return Math.round(Math.min(100, f));
 }
-/** Turnout below 30% (Live): the gauge pulses and the moderator is told. While voting, only after a few seconds. */
 function lowTurnout() {
-  if (!live.on || !S || !voting() || !live.riders) return false;
-  const s = step();
-  const fin = S.final[s.id];
+  const s = scr();
+  if (!live.on || !live.riders || !["vote", "locked"].includes(s.beat)) return false;
+  const fin = S.final[s.slot];
   if (fin) return fin.ratio < cfg("lowTurnout", 0.3);
-  if (S.phase !== "ask") return false;
-  const at = openedAt[s.id];
-  return !!at && Date.now() - at > cfg("lowTurnoutAfterSeconds", 10) * 1000 && tallyOf(s.id).n / live.riders < cfg("lowTurnout", 0.3);
+  const at = openedAt[s.slot];
+  return !!at && Date.now() - at > 10000 && tallyOf(s.slot).n / live.riders < cfg("lowTurnout", 0.3);
 }
 
 // ------------------------------------------------------------------ init
@@ -139,720 +189,808 @@ async function init() {
   try {
     C = await (await fetch("content/en.json", { cache: "no-store" })).json();
   } catch {
-    $("#scene").innerHTML = `<div class="loadbox"><h1>The ride can't start yet</h1><p>The game content didn't load. Check the connection to the server, then reload this page.</p></div>`;
+    $("#main").innerHTML = `<div class="layer"><div class="card state-msg"><h1 class="headline-lg">The ride can't start yet</h1><p class="body-lg">The story didn't load. Check the connection to the server, then reload this page.</p></div></div>`;
     return;
   }
-  STEPS = flatten(C);
-  last = STEPS.length - 1;
-  try {
-    await Promise.all(["700 40px Glacial", "400 30px Glacial", "italic 400 30px Glacial"].map((f) => document.fonts.load(f)));
-  } catch {}
-  // Every label on screen comes from en.json
-  $("#fuel .g-read").firstChild.textContent = `${U("fuel")} `;
-  $("#players span").textContent = U("riders");
-  $("#answers span").textContent = U("answers");
-  $("#modeBadge").textContent = U("hostMode");
-  $("#qrCard b").textContent = U("scanToVote");
-  band = buildBand($("#band"), C.stops, $("#bikeLayerSvg"));
+  SCREENS = buildScreens(C);
+  last = SCREENS.length - 1;
+  try { await Promise.all(["700 56px Playfair", "600 36px Playfair", "400 15px Poppins", "600 14px Poppins", "500 14px 'Red Hat Mono'"].map((f) => document.fonts.load(f))); } catch {}
   S = loadState();
-  S.vote = { ...freshVote(null, 30), ...(S.vote || {}) };
-  if (!PHASE_OK()) Object.assign(S, { phase: "lobby", i: 0 });
-  band.setReached(Math.max(S.reached || 0, Math.max(0, step().stopIndex)));
+  // A reload in the middle of a ride or the ignition lands where it was heading
+  if (scr().transient) S.i = Math.min(last, S.i + 1);
+  // A reload on THINK waits for the presenter instead of opening voting at once
+  if (scr().beat === "think") S.think = { key: scr().key, done: true, duration: cfg("thinkSeconds", 15) };
   render();
   setInterval(tick, 250);
-  // Live is the default. ?mode=host starts offline; without a reachable server it falls back to Host Mode by itself.
   if (wantLive()) enableLive(true);
   setInterval(watchdog, 1000);
   announce();
 }
 const wantLive = () => new URLSearchParams(location.search).get("mode") !== "host" && location.protocol.startsWith("http");
-const PHASE_OK = () => S.phase === "lobby" || S.phase === "arrive" || phasesOf(step()).includes(S.phase);
 
-// ------------------------------------------------------------------ HUD: where we are + the game strip
-function hudWhere() {
-  const s = step();
-  if (S.phase === "lobby") return "";
-  if (s.type === "intro") return U("beforeWeRide");
-  const stop = stopOf(s);
-  if (stop.arrival) return S.phase === "arrive" ? U("arrival") : `${U("arrival")} · ${stop.place}`;
-  if (s.type === "pump") return U("onTheRoad", { place: C.stops[s.stopIndex + 1]?.place || stop.place }); // between two stops
-  const n = U("stopN", { n: s.stopIndex + 1, total: stopTotal(C) });
-  return S.phase === "arrive" ? n : `${n} · ${stop.place}`;
-}
-
-function renderFuel() {
-  const f = fuel();
-  $("#fuelPct").textContent = `${f}%`;
-  $("#fuel").setAttribute("aria-label", `${U("fuel")} ${f}%`);
-  $("#gFill").style.strokeDasharray = `${f} 100`;
-  $("#fuel").classList.toggle("low", lowTurnout());
-}
-
-/** After a vote locks: a small note under the strip. Pumps say "The room fuelled the ride". */
-function flashFuel(before, after, pump) {
-  if (after <= before && !pump) return;
-  const d = $("#fuelDelta");
-  const plus = after - before;
-  d.textContent = pump ? `${U("roomFuelled")}${plus > 0 ? ` · +${plus}%` : ""}` : U("fuelUp", { n: plus });
-  d.className = "fuel-note up";
-  void d.offsetWidth;
-  d.classList.add("show");
-  const g = $("#fuel");
-  g.classList.remove("filling");
-  void g.offsetWidth;
-  g.classList.add("filling");
-  sound.fuel();
-}
-
-/** A number that ticks up (or down) to its target. */
-function setCount(el, n) {
-  if (!el) return;
-  el.dataset.target = Math.max(0, n | 0);
-  if (el.dataset.shown == null) {
-    el.dataset.shown = String(el.dataset.target);
-    el.textContent = el.dataset.shown;
-    return;
+// ------------------------------------------------------------------ results
+function roomTop(step) {
+  const t = tallyOf(step.id);
+  const m = S.manual[step.id] || {};
+  const ids = step.options.map((o) => o.id);
+  if (step.format === "pickn") {
+    if (m.picks?.length) return m.picks;
+    if (!t.n) return [];
+    return [...ids].sort((a, b) => (t.counts[b] || 0) - (t.counts[a] || 0) || ids.indexOf(a) - ids.indexOf(b)).slice(0, step.n);
   }
-  if (el.dataset.ticking) return;
-  const tickTo = () => {
-    const cur = Number(el.dataset.shown);
-    const tgt = Number(el.dataset.target);
-    if (cur === tgt || !el.isConnected) return delete el.dataset.ticking;
-    const nx = reduceMotion() ? tgt : cur + Math.sign(tgt - cur) * Math.max(1, Math.ceil(Math.abs(tgt - cur) / 10));
-    el.dataset.shown = nx;
-    el.textContent = nx;
-    el.dataset.ticking = "1";
-    setTimeout(tickTo, 60);
-  };
-  tickTo();
-}
-let lastRiders = null;
-/** Top right: fuel, "Question N of 7", riders joined and answers for the step on screen (Live), or a small Host mode badge. */
-function updateStrip() {
-  const s = step();
-  const q = isQuestion(s) && S.phase !== "arrive" && S.phase !== "lobby" && !busy;
-  $("#qnum").classList.toggle("hidden", !q);
-  if (q) $("#qnum").textContent = U("questionN", { n: s.qn, total: s.qTotal });
-  $("#players").classList.toggle("hidden", !live.on);
-  $("#answers").classList.toggle("hidden", !(live.on && voting() && S.phase !== "showcase" && !busy));
-  if (live.on) {
-    setCount($("#playersN"), live.riders);
-    if (lastRiders != null && live.riders > lastRiders && !reduceMotion()) {
-      const p = $("#players");
-      p.classList.remove("pulse");
-      void p.offsetWidth;
-      p.classList.add("pulse");
-    }
-    lastRiders = live.riders;
-    setCount($("#ansCount"), voting() ? tallyOf(s.id).n : 0);
-  }
-  $("#modeBadge").classList.toggle("hidden", live.on);
+  if (m.choice) return [m.choice];
+  const max = Math.max(0, ...ids.map((id) => t.counts[id] || 0));
+  return max ? [ids.find((id) => (t.counts[id] || 0) === max)] : [];
 }
 
-// ------------------------------------------------------------------ render
-/** How far the bike has crept forward at this stop: one nudge per finished vote. */
-function stopProgress() {
-  const s = step();
-  if (S.phase === "lobby" || S.phase === "arrive" || s.stopIndex < 0) return 0;
-  return STEPS.filter((x, i) => x.stopIndex === s.stopIndex && i <= S.i && S.final[x.id]).length;
-}
-const tallBand = () => S.phase === "lobby" || S.phase === "arrive" || ["intro", "persona"].includes(step().type);
+// ------------------------------------------------------------------ render (Stitch projector: HUD, stage card, road)
+const PROLOGUE = ["cold", "title", "crew", "fact", "crewClose", "ignite", "fired"];
+const AFTER = ["reveal", "handover", "card", "closing"]; // the room's answer is known: highlight it
+let cardKey = "";
+let bgKey = "";
+let hudHTML = "";
 
 function render() {
-  const s = step();
-  if (!busy) {
-    $("#hudWhere").textContent = hudWhere();
-    band.setStop(Math.max(0, s.stopIndex), stopProgress(), S.phase === "locked" ? 650 : 0); // after a vote locks, the bike creeps on
-  }
-  ensureVote();
-  renderFuel();
-  $("#stage").classList.toggle("band-short", !tallBand() && !busy);
-  $("#stage").classList.toggle("band-tall", tallBand() || busy);
-
-  const key = [S.i, S.phase, live.on].join("|");
-  if (key !== sceneKey && !busy) {
-    sceneKey = key;
-    $("#scene").innerHTML = sceneHTML(s);
-    if (S.phase === "lobby" && live.on) makeQR($("#qrBig"), voteUrl());
-    if (s.link && filled(s.link.url) && s.qr) makeQR($("#qrLink"), s.link.url);
-    if (stats.screens[stats.screens.length - 1] !== screenId()) stats.screens.push(screenId());
-  }
+  const s = scr();
+  const forward = prevI != null && S.i === prevI + 1;
+  const stop = stopOf(C, s);
+  const st = $("#stage");
+  document.body.dataset.beat = s.beat;
+  st.dataset.beat = s.beat;
+  st.dataset.p = s.beat === "lobby" || PROLOGUE.includes(s.beat) || s.beat === "ride" ? "crew" : stopPersona(stop);
+  st.classList.toggle("live", live.on);
+  st.classList.toggle("riding", s.beat === "ride" || s.beat === "fired");
+  renderBackdrop(s, stop);
+  renderHud(s, stop);
+  renderCard(s, stop, forward);
+  renderRoad(s, stop, forward);
   updateResults();
-  if (S.phase === "lobby") setCount($("#ridersCount"), live.riders);
-  fitScene();
-  updateQR();
-  updateStrip();
-  renderVote();
+  updateTimers();
+  updatePlayers();
+  syncSound();
+  prevI = S.i;
   announce();
 }
 
-/** Fit: shrink the answers, then the left column, then the reveal sign. The question never shrinks. */
-function fitScene() {
-  const scene = $("#scene");
-  const inner = scene.firstElementChild;
-  if (!inner) return;
-  const over = () => inner.scrollHeight > scene.clientHeight + 1 || inner.getBoundingClientRect().bottom > scene.getBoundingClientRect().bottom + 1;
-  const parts = [".answers", ".ask-left", ".show-row", ".explain", ".infocard", ".closing"].map((sel) => inner.querySelector(sel)).filter(Boolean);
-  for (const p of parts) p.style.zoom = "";
-  for (const p of parts) {
-    let z = 1;
-    while (over() && z > 0.72) p.style.zoom = (z -= 0.04).toFixed(2);
+/** Cross-fade: the old layer fades out while the new one fades in. */
+function swap(box, html) {
+  for (const old of [...box.children]) {
+    if (old.classList.contains("leaving")) continue;
+    old.classList.add("leaving");
+    setTimeout(() => old.remove(), 600);
   }
+  const el = document.createElement("div");
+  el.className = "layer entering";
+  el.innerHTML = html;
+  box.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove("entering")));
+  return el;
 }
-// The road band animates between tall and short; refit once the scene has its final height.
-document.getElementById("scene").addEventListener("transitionend", (e) => {
-  if (e.target.id === "scene" && e.propertyName === "bottom") fitScene();
-});
+const current = () => $("#main").lastElementChild;
 
-// ------------------------------------------------------------------ scenes
-function sceneHTML(s) {
-  if (S.phase === "lobby") return lobbyHTML();
-  if (S.phase === "arrive") return arriveHTML(s);
-  switch (s.type) {
-    case "intro": return introHTML(s);
-    case "showcase": return showcaseHTML(s);
-    case "question": return questionHTML(s);
-    case "reveal": return revealStepHTML(s);
-    case "persona": return personaStepHTML(s);
-    case "infocard": return infocardHTML(s);
-    case "pump": return pumpHTML(s);
-    case "closing": return closingHTML(s);
+// ------------------------------------------------------------------ backdrop: the place's illustration behind a dark scrim
+function sceneOf(s, stop) {
+  if (s.beat === "lobby") return "workbench";
+  if (PROLOGUE.includes(s.beat)) return "prologue"; // Bengaluru's edge at dusk, before the convoy sets off
+  if (s.beat === "ride") {
+    // One panorama per leg, by the next place on the route (the pump sits on the leg to Nagpur)
+    const next = C.stops.slice(s.stop).find((x) => placeOf(C, x));
+    return `road-${Math.max(1, C.places.indexOf(placeOf(C, next)))}`;
   }
-  return "";
+  return stop?.scene || "prologue";
+}
+function renderBackdrop(s, stop) {
+  const k = sceneOf(s, stop);
+  if (k === bgKey) return;
+  bgKey = k;
+  const src = cfg("backdrops", {})[k];
+  const el = swap($("#backdrop"), `<i class="scrim"></i>`);
+  el.dataset.scene = k;
+  if (src) loadBackdrop(el, src, 0);
 }
 
-/** Lobby: big QR, short URL and a live "riders on board" counter. Host Mode: the title only. */
-function lobbyHTML() {
-  const L = C.lobby;
-  if (!live.on)
-    return `<div class="intro lobby"><div class="card-big enter"><h1>${esc(L.hostTitle)}</h1><h2>${esc(C.subtitle)}</h2><p>${esc(L.hostLine)}</p></div></div>`;
-  return `<div class="intro lobby">
-    <div class="card-big enter">
-      <h1>${esc(L.title)}</h1>
-      <p>${esc(L.line)}</p>
-      <div class="riders"><b id="ridersCount">0</b> <span>${esc(L.counter)}</span></div>
-    </div>
-    <div class="qr-panel enter-2"><div class="qr" id="qrBig"></div><b>${esc(U("scanToVote"))}</b><span>${esc(shortUrl())}</span></div></div>`;
-}
-
-function introHTML(s) {
-  const facts = (s.facts || []).filter(filled);
-  return `<div class="intro">
-    <div class="card-big enter">
-      <h1>${esc(s.title)}</h1>
-      <p>${esc(s.line)}</p>
-      <h2 class="mission">${esc(s.mission)}</h2>
-      ${facts.length ? `<div class="facts">${facts.map((f) => `<div class="fact">${esc(f)}</div>`).join("")}</div>` : ""}
-    </div></div>`;
-}
-
-/** The persona: badge, name, role, and optionally one italic line. */
-function personaHTML(p, line = "", size = 92, big = false) {
-  if (!p) return "";
-  return `<div class="persona ${big ? "big" : ""} enter">
-    <div class="pic">${emblem(p.badge, size)}</div>
-    <div class="who"><div class="p-name">${esc(p.name)}</div>${p.role ? `<div class="p-role">${esc(p.role)}</div>` : ""}</div>
-    ${line ? `<p class="p-voice">“${esc(line)}”</p>` : ""}</div>`;
-}
-
-/** Arrival at a stop (once per stop): the milestone (place, theme, km) and the persona with the opening line. */
-function arriveHTML(s) {
-  const stop = stopOf(s);
-  const [head, sub] = milestoneParts(stop);
-  const p = stop.persona ? { id: stop.persona, ...C.personas[stop.persona] } : null;
-  return `<div class="arrive ${p ? "" : "solo"}">
-    <div class="stone enter"><div class="stone-top"></div><div class="stone-place ${head.length > 12 ? "long" : ""}">${esc(head)}</div>
-      ${sub ? `<div class="stone-sub">${esc(sub)}</div>` : ""}<div class="stone-en">${esc(stop.theme)}</div><div class="stone-km">${stop.km.toLocaleString("en-IN")} km</div></div>
-    ${p ? `<div class="arrive-right">${personaHTML(p, stop.voice, 150, true)}</div>` : ""}</div>`;
-}
-
-/** The question card, with the voting countdown and the "Votes locked" tag under it. */
-const countdownHTML = () => `<div class="countdown" id="countdown" aria-hidden="true"><i id="cdFill"></i></div><span class="locked-tag hidden" id="lockedTag">${esc(U("votesLocked"))}</span>`;
-const boardQ = (s) => `<div class="signboard enter-2"><div class="q-en">${esc(s.question)}</div>${countdownHTML()}</div>`;
-
-// Answer rows: a white row with a letter, the text, a big percentage and an arrow. The face is drawn twice:
-// the second copy is the teal tint, clipped to the vote share (--p), so the fill grows from the left.
-const ARROW = `<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M3 16 H40 M27 4 L42 16 L27 28" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const gridCls = (n) => (n === 4 || n === 2 ? "grid2" : "grid1");
-/** variant: "" (answer row) | "chip" (pick-n chip) */
-function signHTML(id, k, text, keyLabel, variant = "") {
-  const face = (fill) => `<div class="ds-face${fill ? " ds-fill" : ""}"${fill ? ' aria-hidden="true"' : ""}><span class="key">${esc(keyLabel ?? LETTERS[k])}</span><div class="ds-text"><div class="en">${esc(text)}</div></div><span class="ds-pct"></span>${variant ? "" : `<span class="ds-arrow">${ARROW}</span>`}</div>`;
-  return `<div class="dsign ${variant} ghost" data-o="${esc(id)}"><div class="flagbar"></div><div class="ds-body">${face(false)}${face(true)}</div></div>`;
-}
-function answersHTML(s) {
-  switch (s.format) {
-    case "choose":
-      return `<div class="dsigns ${gridCls(s.options.length)}">${s.options.map((o, k) => signHTML(o.id, k, o.text)).join("")}</div>`;
-    case "pickn":
-      return `<div class="dsigns chips">${s.items.map((o, k) => signHTML(o.id, k, o.text, k + 1, "chip")).join("")}</div>`;
-    case "wordcloud":
-      return cloudHTML("cloud", "", "single");
-    case "dualcloud":
-      return `<div class="clouds">${s.parts.map((pt) => cloudHTML(`cloud-${pt.id}`, pt.title, pt.color)).join("")}</div>`;
-  }
-  return "";
-}
-const cloudHTML = (id, title, cls) => `<div class="cloudwrap ${cls}">${title ? `<h4 class="cloud-title">${esc(title)}</h4>` : ""}<div class="cloud empty" id="${id}"></div></div>`;
-/** Host Mode only: what the room should do (show of hands). */
-const hintHTML = () => `<div class="hint" id="hostHint"></div>`;
-
-function questionHTML(s) {
-  const p = personaOf(C, s);
-  return `<div class="ask ${s.format === "dualcloud" ? "dual" : ""} ${p ? "" : "wide"}">
-    ${p ? `<div class="ask-left">${personaHTML(p)}</div>` : ""}
-    <div class="ask-main">
-      ${boardQ(s)}
-      <div class="answers enter-3">${answersHTML(s)}${hintHTML()}</div>
-    </div></div>`;
-}
-
-/** Stop 1: one screen, three states. The websites; then the question under smaller cards; then the cards flip. */
-function showcaseHTML(s) {
-  const st = S.phase;
-  const card = (site) => {
-    const facts = [["builtBy", site.builtBy], ["took", site.took], ["cost", site.cost]].filter(([, v]) => filled(v));
-    return `<div class="show-card"><div class="show-flip">
-      <div class="show-front">${site.image ? `<img class="show-img" src="${esc(site.image)}" alt="${esc(`The ${site.title} website`)}"/>` : ""}<div class="show-title">${esc(site.title)}</div></div>
-      <div class="show-back" aria-hidden="${st === "reveal" ? "false" : "true"}"><div class="show-title">${esc(site.title)}</div>
-        ${facts.length ? `<dl class="show-facts">${facts.map(([k, v]) => `<div><dt>${esc(U(k))}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : `<div class="show-url">${esc(site.url.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</div>`}</div>
-    </div></div>`;
+/** A scene's illustration, saved as .webp, .jpg or .png (whichever exists). Road panoramas tile sideways. */
+const BACKDROP_TYPES = ["webp", "jpg", "png"];
+function loadBackdrop(layer, base, k) {
+  if (k >= BACKDROP_TYPES.length || !layer.isConnected) return;
+  const img = new Image();
+  img.alt = "";
+  img.onload = () => {
+    if (!layer.dataset.scene.startsWith("road-")) return layer.prepend(img);
+    const pano = document.createElement("div");
+    pano.className = "pano";
+    pano.style.backgroundImage = `url("${img.src}")`;
+    layer.prepend(pano);
   };
-  const cards = `<div class="show-row ${st === "showcase" ? "big" : "small"} ${st === "reveal" ? "flipped" : ""}">${s.sites.map(card).join("")}</div>`;
-  if (st === "showcase") return `<div class="showcase enter">${cards}<p class="show-line enter-2">${esc(s.line)}</p></div>`;
-  return `<div class="showcase">
-    ${cards}
-    ${st === "reveal" ? `<div class="explain">${esc(s.reveal)}</div>` : ""}
-    ${boardQ(s)}
-    <div class="answers">${answersHTML(s)}${hintHTML()}</div></div>`;
+  img.onerror = () => loadBackdrop(layer, base, k + 1);
+  img.src = `${base}.${BACKDROP_TYPES[k]}`;
 }
 
-/** A reveal: the persona on the left, the line on a white card, the takeaway as a marigold road sign. */
-function revealStepHTML(s) {
-  const p = personaOf(C, s);
-  return `<div class="ask ${p ? "" : "wide"}">
-    ${p ? `<div class="ask-left">${personaHTML(p)}</div>` : ""}
-    <div class="ask-main reveal-main">
-      ${s.takeaway ? `<div class="signboard enter"><div class="q-en">${esc(s.text)}</div></div><div class="explain big">${esc(s.takeaway)}</div>` : `<div class="explain big">${esc(s.text)}</div>`}
-    </div></div>`;
+// ------------------------------------------------------------------ HUD: where we are (left); players or Host mode, and the join QR (right)
+function chapterText(s, stop) {
+  if (PROLOGUE.includes(s.beat)) return U("prologue", { from: C.coldOpen.from, to: C.coldOpen.to, km: km(C.places[C.places.length - 1].km) });
+  const place = (st) => placeOf(C, st);
+  if (s.beat === "ride" || stop?.type === "pump") {
+    const p = place(C.stops.slice(s.stop).find((x) => place(x)));
+    return p ? U("towards", { place: p.name, km: km(p.km) }) : U("onTheRoad");
+  }
+  const p = place(stop);
+  return p ? U("chapter", { n: C.places.indexOf(p) + 1, total: C.places.length, name: stop.chapter || stop.spot, theme: stop.theme || "" }) : "";
 }
+const hostChip = () => `<span class="chip host"><i class="dot"></i><span class="label-lg">${esc(U("hostMode"))}</span></span>`;
+const playersChip = () => `<span class="chip"><i class="dot"></i><span class="label-lg muted">${esc(U("onBoard"))}</span><b class="mono-md" id="playersN">0</b></span>`;
+function joinChip() {
+  return `<span class="chip join"><span class="qr-mini" data-qr="${esc(voteUrl())}"></span><span class="join-t"><b class="label-sm">${esc(C.lobby.title)}</b><span class="mono-md">${esc(shortUrl())}</span></span></span>`;
+}
+/** The vote panel shows its own QR code; everywhere else (live) a small one sits in the HUD. */
+const panelQR = (s, stop) => s.beat === "vote" && !S.closed[s.slot] && sideLayout(ctxOf(s, stop), stop);
 
-/** A second persona met at the same stop: the persona, big, with their line. */
-function personaStepHTML(s) {
-  return `<div class="meet">${personaHTML(personaOf(C, s), s.line, 150, true)}</div>`;
+function renderHud(s, stop) {
+  const right = s.beat === "lobby" && live.on
+    ? `<span class="chip big"><i class="dot"></i><span class="label-lg muted">${esc(U("playersOnBoard"))}</span><b class="mono-lg" id="playersN">0</b></span>`
+    : `${live.on ? playersChip() : hostChip()}${live.on && s.beat !== "lobby" && !panelQR(s, stop) ? joinChip() : ""}`;
+  const left = s.beat === "lobby" ? `<div class="hud-l row">${pill(C, "crew", U("brand"))}</div>` : `<div class="hud-l"><span class="mono-md caps chapter">${esc(chapterText(s, stop))}</span></div>`;
+  const html = `${left}<div class="hud-r">${right}</div>`;
+  if (html === hudHTML) return;
+  hudHTML = html;
+  const h = $("#hud");
+  h.className = s.beat === "lobby" ? "lobby" : "";
+  h.innerHTML = html;
+  h.querySelectorAll("[data-qr]").forEach((q) => (q.innerHTML = qr(q.dataset.qr)));
+  setCount($("#playersN"), live.riders, true);
 }
-
-function infocardHTML(s) {
-  const link = s.link && filled(s.link.url);
-  return `<div class="pit card-pit"><div class="board enter infocard">
-    <div class="board-text">${esc(s.title)}</div>
-    ${s.rows ? `<table class="token-table enter-2">${s.rows.map((r) => `<tr><td>${esc(r.from)}</td><td class="arr" aria-hidden="true">${ARROW}</td><td class="tok">${esc(r.to)}</td></tr>`).join("")}</table>` : ""}
-    <div class="card-text">${esc(s.text)}</div>
-    ${link ? `<div class="card-link">${s.qr ? `<div class="qr" id="qrLink"></div>` : ""}<span>${esc(s.link.url.replace(/^https?:\/\//, ""))}</span></div>` : ""}</div>
-    <div class="pit-icon enter-2">${PIT_ICONS.info}</div></div>`;
+function updatePlayers() {
+  setCount($("#playersN"), live.riders);
 }
-
-function pumpHTML(s) {
-  const locked = S.phase === "locked";
-  return `<div class="pit pump">
-    <div class="pit-q">${boardQ(s)}
-      <div class="answers">${answersHTML(s)}${hintHTML()}</div>
-      ${locked ? `<div class="explain">${esc(s.resultLine)}</div>` : ""}</div>
-    <div class="pump-side enter"><div class="pit-icon">${PIT_ICONS.petrol}</div><div class="board-kind">${esc(s.board)}</div></div></div>`;
-}
-
-function closingHTML(s) {
-  return `<div class="closing-wrap"><div class="closing enter"><p>${esc(s.text)}</p><div class="final-line enter-2">${esc(s.finalLine)}</div></div></div>`;
-}
-
-// ------------------------------------------------------------------ live results (updated in place, no re-animation)
-function setFlags(el, flags) {
-  const bar = el.querySelector(".flagbar");
-  if (bar) bar.innerHTML = flags.map(([cls, txt]) => `<span class="flag ${cls}">${esc(txt)}</span>`).join("");
-}
-/** Grow the fill to p% and write the big percentage; null text = no answers yet (ghost). */
-function setFill(el, p, txt) {
+function setCount(el, n, instant) {
   if (!el) return;
-  el.style.setProperty("--p", `${Math.max(0, Math.min(100, p))}%`);
-  el.classList.toggle("ghost", txt == null);
-  el.querySelectorAll(".ds-pct").forEach((x) => (x.textContent = txt ?? ""));
-}
-const partOf = (w) => w.part || "";
-const wordsFor = (part = "") => (live.on ? S.liveWords : S.words).filter((w) => partOf(w) === part);
-function renderCloud(box, words, settled, lo, hi) {
-  if (!box) return;
-  const max = Math.max(1, ...words.map((w) => w.n));
-  const list = settled ? [...words].sort((a, b) => b.n - a.n) : words;
-  const key = JSON.stringify([list.map((w) => [w.text, w.n]), settled]);
-  box.classList.toggle("empty", !words.length);
-  box.classList.toggle("settled", settled);
-  if (box.dataset.key === key) return;
-  box.dataset.key = key;
-  box.innerHTML = words.length
-    ? list.map((w) => `<span class="w" style="font-size:${lo + Math.round((w.n / max) * (hi - lo))}px">${esc(w.text)}</span>`).join("")
-    : `<span class="cloud-empty">${esc(U("cloudEmpty"))}</span>`;
-}
-
-/** The room's result for a vote step: the leading choice (choose / pump) or the top n (pick-n). */
-function roomResult(s) {
-  const t = tallyOf(s.id);
-  const m = S.manual[s.id] || {};
-  const ids = choicesOf(s).map((o) => o.id);
-  if (s.format === "pickn") {
-    if (m.picks?.length) return { picks: m.picks };
-    if (!t.n) return {};
-    return { picks: [...ids].sort((a, b) => (t.counts[b] || 0) - (t.counts[a] || 0) || ids.indexOf(a) - ids.indexOf(b)).slice(0, s.n) };
-  }
-  if (m.choice) return { choice: m.choice };
-  const max = Math.max(0, ...ids.map((id) => t.counts[id] || 0));
-  return max ? { choice: ids.find((id) => (t.counts[id] || 0) === max) } : {};
-}
-
-function updateResults() {
-  if (!voting() || S.phase === "showcase") return;
-  const s = step();
-  const t = tallyOf(s.id);
-  const locked = S.phase !== "ask";
-  const m = S.manual[s.id] || {};
-  const r = roomResult(s);
-  if (s.format === "choose" || s.format === "pickn") {
-    document.querySelectorAll(".answers .dsign").forEach((el) => {
-      const id = el.dataset.o;
-      let p = pct(t.counts[id] || 0, t.n);
-      let txt = t.n ? `${p}%` : null;
-      if (!t.n && (m.choice || m.picks)) {
-        const on = m.choice === id || m.picks?.includes(id); // Host Mode: the room's pick, typed in
-        p = on ? 100 : 0;
-        txt = null;
-      }
-      setFill(el, p, txt);
-      const lead = s.format === "pickn" ? r.picks?.includes(id) : r.choice === id;
-      el.classList.toggle("lead", !!lead);
-      el.classList.toggle("out", locked && !lead && !!(r.choice || r.picks));
-      const label = s.format === "pickn" ? U("roomsTop", { n: s.n }) : locked || m.choice ? U("roomsPick") : U("leading");
-      setFlags(el, lead ? [["room", label]] : []);
-    });
-  } else if (s.format === "wordcloud") renderCloud($("#cloud"), wordsFor(""), locked, 34, 84);
-  else if (s.format === "dualcloud") s.parts.forEach((pt) => renderCloud($(`#cloud-${pt.id}`), wordsFor(pt.id), locked, 26, 60));
-  const hint = $("#hostHint");
-  if (hint) hint.textContent = live.on || locked ? "" : hostHint(s);
-}
-function hostHint(s) {
-  if (s.format === "pickn") return U("hostHintPick", { n: s.n });
-  if (isCloud(s)) return U("hostHintCloud");
-  return U("hostHintChoose");
-}
-
-// ------------------------------------------------------------------ Host Mode entry (also overrides Live)
-function entryHelp(s) {
-  if (!isVote(s) || S.phase !== "ask") return "";
-  if (s.format === "pickn") return `Keys 1–${s.items.length}: toggle the room's top ${s.n}. 0 clears.`;
-  if (s.format === "wordcloud") return "W adds an answer to the cloud.";
-  if (s.format === "dualcloud") return `W adds to “${s.parts[0].title}”, N adds to “${s.parts[1].title}”.`;
-  return `Keys A–${LETTERS[s.options.length - 1]}: the room's pick. 0 clears.`;
-}
-function enter(index) {
-  if (busy || S.phase !== "ask") return;
-  const s = step();
-  if (!isVote(s) || isCloud(s)) return;
-  if (index === -1) {
-    delete S.manual[s.id];
-    return commit();
-  }
-  const m = (S.manual[s.id] = { ...(S.manual[s.id] || {}) });
-  const list = choicesOf(s);
-  if (index >= list.length) return;
-  const id = list[index].id;
-  if (s.format === "pickn") {
-    m.picks = m.picks || [];
-    if (m.picks.includes(id)) m.picks = m.picks.filter((x) => x !== id);
-    else if (m.picks.length < s.n) m.picks.push(id);
-    else toast(`The room's top ${s.n} is full. Press a picked number again to remove it, or 0 to clear.`);
-  } else m.choice = m.choice === id ? undefined : id;
-  commit();
-}
-
-// ------------------------------------------------------------------ flow
-/** Ride between stops (never between steps of one stop). */
-async function rideTo(target) {
-  busy = true;
-  const from = S.i;
-  const t = STEPS[target];
-  const dest = C.stops[t.stopIndex];
-  $("#stage").classList.remove("band-short");
-  $("#stage").classList.add("band-tall");
-  $("#scene").innerHTML = `<div class="riding"><span class="sr-only">${esc(U("onTheRoad", { place: dest.place }))}</span></div>`;
-  $("#hudWhere").textContent = target > from ? U("onTheRoad", { place: dest.place }) : dest.place;
-  sceneKey = "";
-  $("#qrCard").classList.add("hidden");
-  updateStrip();
-  if (live.on) syncServer({ slot: t.id, phase: "arrive" });
-  let shown = false;
-  await band.ride(Math.max(0, STEPS[from].stopIndex), t.stopIndex, RIDE_MS, (e) => {
-    if (!shown && e > 0.55 && target > from) {
-      shown = true;
-      S.reached = Math.max(S.reached || 0, t.stopIndex);
-      band.setReached(S.reached, true);
-    }
-  });
-  busy = false;
-}
-
-async function next() {
-  if (busy) return;
-  const s = step();
-  if (S.phase === "lobby") {
-    S.i = 0;
-    S.phase = "show";
-    return commit();
-  }
-  if (S.phase === "arrive") {
-    S.phase = phasesOf(s)[0];
-    return commit();
-  }
-  if (S.phase === "ask") return lockVotes();
-  const ph = phasesOf(s);
-  const k = ph.indexOf(S.phase);
-  if (k < ph.length - 1) {
-    S.phase = ph[k + 1];
-    commit();
-    if (S.phase === "reveal") sound.reveal();
+  const target = Math.max(0, n | 0);
+  el.dataset.target = target;
+  if (instant || el.dataset.shown == null || reduceMotion()) {
+    el.dataset.shown = target;
+    el.textContent = target;
     return;
   }
-  return advance();
-}
-/** Forward to the next step: the same stop changes only the main panel; a new stop rides and arrives. */
-async function advance() {
-  if (S.i >= last) return;
-  const s = step();
-  const nx = STEPS[S.i + 1];
-  S.timer = { endsAt: null, duration: S.timer.duration };
-  if (nx.stopIndex === s.stopIndex) {
-    S.i++;
-    S.phase = phasesOf(nx)[0];
-    return commit();
-  }
-  if (s.stopIndex >= 0) await rideTo(S.i + 1); // the first stop is where the ride starts: no ride to it
-  S.i++;
-  S.phase = "arrive";
-  S.reached = Math.max(S.reached || 0, nx.stopIndex);
-  band.setReached(S.reached);
-  stats.arrivals.push({ stop: C.stops[nx.stopIndex].id, km: C.stops[nx.stopIndex].km });
-  commit();
-}
-
-async function back() {
-  if (busy) return;
-  const s = step();
-  const lastPhase = () => {
-    const ph = phasesOf(step());
-    S.phase = ph[ph.length - 1];
+  if (el.dataset.ticking) return;
+  const step = () => {
+    const cur = Number(el.dataset.shown);
+    const tgt = Number(el.dataset.target);
+    if (cur === tgt || !el.isConnected) return delete el.dataset.ticking;
+    const nx = cur + Math.sign(tgt - cur) * Math.max(1, Math.ceil(Math.abs(tgt - cur) / 8));
+    el.dataset.shown = nx;
+    el.textContent = nx;
+    el.dataset.ticking = "1";
+    setTimeout(step, 60);
   };
-  if (S.phase === "lobby") return;
-  if (s.type === "intro") S.phase = "lobby";
-  else if (S.phase === "arrive") {
-    if (s.stopIndex === 0) {
-      S.i = 0;
-      S.phase = "show";
-    } else {
-      await rideTo(S.i - 1);
-      S.i--;
-      lastPhase();
-    }
-  } else if (S.phase === "locked") {
-    // Undo the lock: the result comes off, votes stay closed until reopened (V or the moderator)
-    delete S.final[s.id];
-    S.phase = "ask";
-  } else {
-    const ph = phasesOf(s);
-    const k = ph.indexOf(S.phase);
-    if (k > 0) S.phase = ph[k - 1];
-    else if (s.stepIndex === 0) S.phase = "arrive";
-    else {
-      S.i--;
-      lastPhase();
-    }
-  }
-  commit();
+  step();
 }
 
-// ------------------------------------------------------------------ the voting countdown
+// ------------------------------------------------------------------ the stage card
+/** The question a stop screen is about: the one being asked, or the last one answered (cards, handover). */
+function ctxOf(s, stop) {
+  if (!stop) return null;
+  const votes = stop.steps.filter(isVoteStep);
+  if (s.beat === "look" || (s.beat === "listen" && stop.steps.some((x) => x.sites))) return null;
+  if (s.beat === "listen" || s.beat === "gather") return votes[0] || null;
+  if (s.beat === "handover") return votes[votes.length - 1] || null;
+  const step = stepOf(C, s);
+  if (!step) return null;
+  if (isVoteStep(step)) return step;
+  const k = stop.steps.indexOf(step);
+  return [...stop.steps.slice(0, k)].reverse().find(isVoteStep) || null;
+}
+/** Four (or three) answers sit beside a side panel; nine answers and the travellers take the full width. */
+const sideLayout = (step, stop) => !!step && !stop?.steps.some((x) => x.sites) && !["pickn", "badges"].includes(step.format);
+
+function cardKeyOf(s, stop) {
+  if (s.beat === "lobby") return `lobby|${live.on}`;
+  if (PROLOGUE.includes(s.beat)) return "prologue";
+  if (s.beat === "arrive" || s.beat === "ride") return s.key;
+  const ctx = ctxOf(s, stop);
+  return `${stop.id}|${ctx?.id || "look"}|${live.on && navigator.onLine}`;
+}
+
+function renderCard(s, stop, forward) {
+  const key = cardKeyOf(s, stop);
+  const main = $("#main");
+  main.dataset.layout = s.beat === "lobby" ? "lobby" : "card";
+  if (key !== cardKey) {
+    cardKey = key;
+    const el = swap(main, cardHTML(s, stop));
+    el.querySelectorAll("[data-qr]").forEach((q) => (q.innerHTML = qr(q.dataset.qr)));
+    requestAnimationFrame(() => {
+      sizeFrames(el);
+      fitCard(el);
+    });
+    el.querySelectorAll("img").forEach((im) => im.addEventListener("load", () => fitCard(el), { once: true }));
+  }
+  const root = current();
+  if (!root) return;
+  root.dataset.beat = s.beat;
+  if (PROLOGUE.includes(s.beat)) patchPrologue(root, s);
+  else if (stop && !["arrive", "ride"].includes(s.beat)) patchStop(root, s, stop);
+  if (s.beat === "ride" && forward) rideCounter(root, s);
+  fitCard(root);
+}
+
+/** Keep the card inside the stage: scale it down a little if a long answer would push it over. */
+function fitCard(root) {
+  const card = root?.querySelector(".card");
+  if (!card) return;
+  card.style.transform = "";
+  const m = getComputedStyle($("#main"));
+  const room = $("#main").clientHeight - parseFloat(m.paddingTop) - parseFloat(m.paddingBottom);
+  const h = card.offsetHeight;
+  if (h > room) card.style.transform = `scale(${Math.max(0.78, room / h).toFixed(3)})`;
+}
+
+function cardHTML(s, stop) {
+  if (s.beat === "lobby") return lobbyHTML();
+  if (PROLOGUE.includes(s.beat)) return prologueHTML();
+  if (s.beat === "ride") return rideHTML(s, stop);
+  if (s.beat === "arrive") return arriveHTML(stop);
+  if (stop.steps.some((x) => x.sites)) return sitesCardHTML(s, stop);
+  if (stop.gathering) return palaceHTML(s, stop);
+  return stopCardHTML(s, stop);
+}
+
+function lobbyHTML() {
+  const L = C.lobby;
+  const left = `<div class="lobby-l"><h1 class="display-lg balance">${esc(live.on ? L.title : C.title)}</h1><p class="headline-md muted pretty">${esc(live.on ? L.line : L.hostLine)}</p></div>`;
+  const right = live.on
+    ? `<article class="qr-card"><div class="qr-big" data-qr="${esc(voteUrl())}"></div><span class="mono-lg">${esc(shortUrl())}</span></article>`
+    : `<article class="qr-card hands">${icon("front_hand")}</article>`;
+  return `<div class="lobby">${left}${right}</div>`;
+}
+
+// The prologue: one quiet card for the cold open, the title, who's riding and the ignition (patched per beat)
+function prologueHTML() {
+  return `<div class="card prologue">
+    <h1 class="display-lg balance" data-title></h1>
+    <p class="headline-md pretty" data-line></p>
+    <ul class="facts">${C.crew.facts.map((f, k) => (filled(f) ? `<li class="tile fact" data-k="${k}">${icon("check_circle", "pcb")}<span class="body-md">${esc(f)}</span></li>` : "")).join("")}</ul>
+    <span class="meter rev"><i data-rev></i></span>
+  </div>`;
+}
+function patchPrologue(root, s) {
+  const CO = C.coldOpen;
+  let title = "", line = "";
+  if (s.beat === "cold") line = CO.lines[s.line];
+  if (s.beat === "title") [title, line] = [CO.title, `${CO.from} → ${CO.to}`];
+  if (["crew", "fact"].includes(s.beat)) [title, line] = [C.crew.title, C.crew.line];
+  if (s.beat === "crewClose") line = C.crew.closing;
+  if (s.beat === "ignite" || s.beat === "fired") line = C.ignition.prompt;
+  root.querySelector("[data-title]").textContent = title;
+  root.querySelector("[data-line]").textContent = line;
+  const crew = ["crew", "fact"].includes(s.beat);
+  root.querySelector(".facts").classList.toggle("hidden", !crew || !root.querySelector(".fact"));
+  root.querySelectorAll(".fact").forEach((f) => f.classList.toggle("on", s.beat === "fact" && Number(f.dataset.k) <= s.fact));
+}
+
+function arriveHTML(stop) {
+  const p = placeOf(C, stop);
+  return `<div class="card arrive" data-p="${stopPersona(stop)}">
+    <h1 class="display-lg balance">${esc(p ? p.name : stop.spot)}</h1>
+    <p class="headline-md muted">${esc(stop.arrival ? U("fullConvoy") : stop.spot)}</p>
+  </div>`;
+}
+
+function rideHTML(s, stop) {
+  const dest = placeOf(C, stop);
+  const prev = [...C.stops.slice(0, s.stop)].reverse().find((x) => placeOf(C, x));
+  const from = placeOf(C, prev)?.km ?? 0;
+  return `<div class="card ride">
+    <span class="mono-md caps pcb">${esc(U("onTheRoad"))}</span>
+    <h1 class="display-md">${esc(dest ? dest.name : stop.spot)}</h1>
+    ${dest ? `<span class="mono-lg" data-km data-from="${from}" data-to="${dest.km}">${esc(km(dest.km))}</span>` : `<span class="mono-lg">${icon("local_gas_station", "saffron")}</span>`}
+  </div>`;
+}
+/** The odometer on the ride card counts up to the next stop's km while the bikes ride. */
+function rideCounter(root) {
+  const el = root.querySelector("[data-km]");
+  if (!el || reduceMotion()) return;
+  const a = Number(el.dataset.from);
+  const b = Number(el.dataset.to);
+  const dur = cfg("rideMs", 3000) * 0.9;
+  const t0 = performance.now();
+  const step = (t) => {
+    const f = Math.min(1, (t - t0) / dur);
+    el.textContent = km(Math.round(a + (b - a) * (1 - (1 - f) ** 2)));
+    if (f < 1 && el.isConnected) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/** A stop's card: persona, story line, question, answers; and the vote panel or the stop's info card. */
+function stopCardHTML(s, stop) {
+  const ctx = ctxOf(s, stop);
+  const pid = stopPersona(stop);
+  const side = sideLayout(ctx, stop);
+  const isPump = stop.type === "pump";
+  const head = isPump ? `<span class="pill persona" data-p="lakshmi">${icon("local_gas_station")}<span class="label-lg">${esc(stop.spot)}</span></span>` : pill(C, pid);
+  const n = ctx?.options.length || 0;
+  return `<div class="card stop ${side ? "side" : "wide"}" data-p="${pid}">
+    <div class="col-main">
+      <div class="row">${head}<span class="spacer"></span><span class="status" data-status></span></div>
+      <p class="story body-lg pretty" data-story></p>
+      <h1 class="headline-lg balance" data-head></h1>
+      ${ctx ? `<div class="opts n${n}">${ctx.options.map((o, k) => optionCard(C, ctx, o, k)).join("")}</div>` : ""}
+      <p class="after body-md pretty" data-after></p>
+    </div>
+    ${side ? `<aside class="panel" data-panel></aside>` : ""}
+  </div>`;
+}
+
+/** One line per beat: the voice while listening, the twist once the answer is known. */
+function storyOf(s, stop, ctx) {
+  if (s.beat === "listen" || s.beat === "look") return stop.voice ? { text: `“${stop.voice}”` } : null;
+  const twist = !stop.steps.some((x) => x.sites) && ctx?.revealNote; // Stop 1 puts its reveal beside the question
+  if (["reveal", "card"].includes(s.beat) && twist) return { text: twist, twist: true };
+  return null;
+}
+function patchStop(root, s, stop) {
+  const ctx = ctxOf(s, stop);
+  const step = stepOf(C, s);
+  const story = root.querySelector("[data-story]");
+  if (story) {
+    const st = storyOf(s, stop, ctx);
+    story.classList.toggle("solo", s.beat === "listen");
+    story.classList.toggle("twist", !!st?.twist);
+    story.textContent = st ? st.text : "";
+  }
+  const head = root.querySelector("[data-head]");
+  const twisted = story && story.classList.contains("twist") && s.beat === "reveal";
+  if (head) head.textContent = twisted ? "" : s.beat === "handover" ? `“${stop.handover}”` : s.beat === "closing" ? step.text : ["listen", "gather", "look"].includes(s.beat) || !ctx ? "" : ctx.question;
+  const after = root.querySelector("[data-after]");
+  if (after) {
+    let t = "";
+    if (stop.type === "pump" && ["locked"].includes(s.beat)) t = ctx.resultLine;
+    if (stop.steps.some((x) => x.sites) && s.beat === "reveal") t = ctx.revealNote;
+    after.textContent = t;
+  }
+  const stat = root.querySelector("[data-status]");
+  if (stat) stat.innerHTML = statusHTML(s, stop, ctx);
+  const panel = root.querySelector("[data-panel]");
+  if (panel) {
+    const html = panelHTML(s, stop, ctx, step);
+    if (panel.dataset.html !== html) {
+      panel.dataset.html = html;
+      panel.innerHTML = html;
+      panel.querySelectorAll("[data-qr]").forEach((q) => (q.innerHTML = qr(q.dataset.qr)));
+      panel.classList.toggle("empty", !html);
+      if (step?.rows) playTokens(panel);
+    }
+  }
+  const sites = root.querySelector(".sites");
+  if (sites) sites.classList.toggle("flipped", ctx?.revealSites && ["reveal", "handover"].includes(s.beat));
+  const guessed = root.querySelector("[data-guessed]");
+  if (guessed) guessed.innerHTML = ctx?.revealSites && ["reveal", "handover"].includes(s.beat) ? guessHTML(stop) : "";
+}
+
+/** Compact vote status (Stop 1, nine answers, the travellers): label, clock, answers in. */
+function statusHTML(s, stop, ctx) {
+  if (!ctx || sideLayout(ctx, stop)) return "";
+  if (s.beat === "think") return `<span class="label-lg pcb">${esc(U("thinkLabel"))}</span><span class="mono-lg pcb" data-clock></span>`;
+  if (s.beat === "vote" && !S.closed[s.slot]) return `<span class="label-lg pcb"><i class="dot pulse"></i>${esc(U("votingOpen"))}</span><span class="mono-lg pcb" data-clock></span>${live.on ? `<span class="mono-md muted" data-voted></span>` : ""}`;
+  if (s.beat === "vote" || s.beat === "locked") return `<span class="label-lg muted">${icon("lock")} ${esc(U("votesLocked"))}</span>${live.on ? `<span class="mono-md muted" data-voted></span>` : ""}`;
+  return "";
+}
+
+/** The side panel: think timer, vote (QR + clock + count, or show of hands), votes locked, or the stop's info card. */
+function panelHTML(s, stop, ctx, step) {
+  if (s.beat === "card" && step) return infoCardHTML(step);
+  if (s.beat === "think")
+    return `<div class="panel-box"><div class="ph"><span class="label-lg pcb">${esc(U("thinkLabel"))}</span><span class="mono-lg" data-clock></span></div><span class="meter"><i data-meter></i></span></div>`;
+  if (s.beat === "vote" && !S.closed[s.slot]) {
+    const head = `<div class="ph"><span class="label-lg pcb"><i class="dot pulse"></i>${esc(U("votingOpen"))}</span><span class="mono-lg" data-clock></span></div>`;
+    if (!live.on) return `<div class="panel-box">${head}<div class="hands">${icon("front_hand", "pcb")}<span class="title-md">${esc(U("showOfHands"))}</span></div><span class="meter"><i data-meter></i></span></div>`;
+    return `<div class="panel-box">${head}<div class="qr-box" data-qr="${esc(voteUrl())}"></div><span class="mono-md" data-voted></span></div>`;
+  }
+  if (s.beat === "vote" || s.beat === "locked")
+    return `<div class="panel-box"><div class="ph"><span class="label-lg muted">${icon("lock")} ${esc(U("votesLocked"))}</span><span class="mono-lg muted">00:00</span></div>${live.on ? `<span class="mono-md" data-voted></span>` : ""}</div>`;
+  return "";
+}
+
+/** Stop 3's cards: the token swap and Insight Out (its QR code only once the link is filled in). */
+function infoCardHTML(step) {
+  if (step.rows)
+    return `<div class="info-card" data-p="arif"><span class="label-lg pcb">${esc(step.title)}</span>
+      <div class="tokens mono-md">${step.rows.map((r, k) => `<div class="tok" style="--k:${k}"><span class="from muted">${esc(r.from)}</span><span class="to pcb">→ ${esc(r.to)}</span></div>`).join("")}</div>
+      <p class="body-md muted pretty">${esc(step.text)}</p></div>`;
+  return `<div class="info-card" data-p="crew"><span class="label-lg pcb">${esc(step.title)}</span><p class="body-md muted pretty">${esc(step.text)}</p>
+    ${filled(step.link) ? `<div class="link-row"><div class="qr-box small" data-qr="${esc(step.link)}"></div><span class="mono-md">${esc(step.link.replace(/^https?:\/\//, ""))}</span></div>` : ""}</div>`;
+}
+/** The token rows swap one after another (names turn into tokens). */
+function playTokens(panel) {
+  const card = panel.querySelector(".info-card");
+  if (!card || reduceMotion()) return card?.classList.add("swapped");
+  setTimeout(() => card.classList.add("swapped"), 400);
+}
+
+// Stop 1: the two websites (live embed when online and Live, else the bundled screenshot), flipping on the reveal
+function sitesCardHTML(s, stop) {
+  const ctx = ctxOf(s, stop);
+  const look = !ctx;
+  const sites = stop.steps.find((x) => x.sites).sites;
+  const embed = live.on && navigator.onLine;
+  const cards = sites
+    .map((site) => {
+      const facts = [["builtBy", site.builtBy], ["took", site.took], ["cost", site.cost]].filter(([, v]) => filled(v));
+      const host = site.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+      const shot = embed && site.embed
+        ? `<div class="frame"><iframe src="${esc(site.url)}" title="${esc(site.title)}" loading="lazy" tabindex="-1" sandbox="allow-scripts allow-same-origin"></iframe></div>`
+        : `<div class="frame"><img src="${esc(site.image)}" alt="${esc(`The ${site.title} website`)}" /></div>`;
+      return `<article class="site" data-p="${esc(site.tone || "crew")}"><div class="site-in">
+        <div class="face front"><div class="row between"><span class="title-md">${esc(site.title)}</span>${icon(site.icon || "link", "pcb")}</div>
+          <div class="shot">${shot}<div class="row between"><span class="label-sm">${esc(site.caption || "")}</span><span class="mono-md pcb">${esc(host.split("/")[0].split(".").slice(-2).join("."))}</span></div></div></div>
+        <div class="face back"><div class="row between"><span class="title-md">${esc(site.title)}</span>${icon(site.icon || "link", "pcb")}</div>
+          <div class="back-in">${facts.length ? `<dl>${facts.map(([k, v]) => `<div><dt class="label-sm pcb">${esc(U(k))}</dt><dd class="body-md">${esc(v)}</dd></div>`).join("")}</dl>` : `${icon(site.icon || "link", "big pcb")}<span class="label-sm pcb">${esc(site.caption || "")}</span>`}<span class="mono-md">${esc(host)}</span></div></div>
+      </div></article>`;
+    })
+    .join("");
+  const crew = `<div class="row">${pill(C, "crew", C.personas.crew.name)}</div>`;
+  if (look)
+    return `<div class="card stop sites-look" data-p="crew"><div class="col-main">${crew}<p class="story body-lg pretty" data-story></p><div class="sites big">${cards}</div></div></div>`;
+  return `<div class="card stop sites-q" data-p="crew">
+    <div class="col-main">${crew}<p class="story body-md pretty" data-story></p><div class="sites">${cards}</div><p class="guessed body-md" data-guessed></p></div>
+    <div class="col-q"><div class="row between"><span></span><span class="status" data-status></span></div>
+      <h1 class="headline-lg balance" data-head></h1>
+      <div class="opts n${ctx.options.length}">${ctx.options.map((o, k) => optionCard(C, ctx, o, k)).join("")}</div>
+      <p class="after body-md pretty pcb" data-after></p></div>
+  </div>`;
+}
+function guessHTML(stop) {
+  const guess = stop.steps.find((x) => x.type === "guess");
+  const top = guess && roomTop(guess)[0];
+  if (!top) return "";
+  const t = tallyOf(guess.id);
+  return `<span class="label-sm muted">${esc(U("roomGuessed"))}</span> <b>${esc(guess.options.find((x) => x.id === top).text)}</b>${t.n ? ` <span class="mono-md pcb">${pct(t.counts[top] || 0, t.n)}%</span>` : ""}`;
+}
+/** Live sites are drawn at desktop size and scaled into their frame. */
+function sizeFrames(root) {
+  root.querySelectorAll(".frame iframe").forEach((f) => {
+    const box = f.parentElement;
+    const k = box.clientWidth / 1280;
+    f.style.transform = `scale(${k})`;
+    f.style.height = `${box.clientHeight / k}px`;
+  });
+}
+
+// The palace: the four travellers, Q7 on their cards, and the closing line
+function palaceHTML(s, stop) {
+  const ctx = ctxOf(s, stop);
+  const lines = Object.fromEntries(stop.gathering.map((g) => [g.persona, g.line]));
+  return `<div class="card stop palace" data-p="crew">
+    <div class="col-main">
+      <div class="row between"><span></span><span class="status" data-status></span></div>
+      <h1 class="headline-lg balance" data-head></h1>
+      <div class="opts n4 travellers">${ctx.options.map((o, k) => optionCard(C, ctx, o, k, lines)).join("")}</div>
+      <p class="after body-lg pretty" data-after></p>
+    </div></div>`;
+}
+
+// ------------------------------------------------------------------ results on the answers
+function updateResults() {
+  const s = scr();
+  const stop = stopOf(C, s);
+  const step = ctxOf(s, stop);
+  const root = current();
+  if (!root) return;
+  if (step && isVoteStep(step)) {
+    const t = tallyOf(step.id);
+    const m = S.manual[step.id] || {};
+    const top = AFTER.includes(s.beat) ? roomTop(step) : [];
+    const pre = ["listen", "gather", "think"].includes(s.beat);
+    root.querySelectorAll(".opt").forEach((el) => {
+      const id = el.dataset.o;
+      let p = pct(t.counts[id] || 0, t.n);
+      let txt = t.n ? `${p}%` : "";
+      if (!t.n && (m.choice || m.picks)) {
+        p = m.choice === id || m.picks?.includes(id) ? 100 : 0; // Host mode: the room's pick, entered by hand
+        txt = "";
+      }
+      el.style.setProperty("--p", `${pre ? 0 : p}%`);
+      el.querySelector(".pct").textContent = pre ? "" : txt;
+      el.classList.toggle("top", top.includes(id));
+      el.classList.toggle("picked", !pre && !t.n && p === 100);
+    });
+    root.querySelectorAll("[data-voted]").forEach((v) => (v.textContent = U("voted", { n: t.n, total: live.riders })));
+  }
+  const g = root.querySelector("[data-guessed]");
+  if (g && g.innerHTML) g.innerHTML = guessHTML(stop);
+  if (s.beat !== "lobby") {
+    const f = $("#fuel");
+    const val = fuel();
+    if (f.dataset.v !== String(val)) {
+      f.dataset.v = val;
+      f.innerHTML = fuelGauge(C, val);
+    }
+  }
+}
+
+// ------------------------------------------------------------------ the road: convoy, milestone, route and fuel
+const SLOT = 200;
+const LEFT = 48;
+let roadKey = "";
+
+/** The stop's persona waits by the road from their arrival until they join at the handover. */
+function waitingAt(s, stop, joined) {
+  const pid = stop?.persona;
+  if (!pid || pid === "crew" || joined.includes(pid)) return null;
+  return ["arrive", "listen", "think", "vote", "locked", "reveal", "card"].includes(s.beat) ? pid : null;
+}
+function rider(pid) {
+  const el = document.createElement("div");
+  el.className = "rider";
+  el.dataset.p = pid;
+  el.innerHTML = `<span class="tag label-sm">${icon(personaIcon(C, pid))}<span></span></span>${bike(pid, { beam: pid === "crew" })}`;
+  return el;
+}
+function renderRoad(s, stop, forward) {
+  const convoy = $("#convoy");
+  const joined = convoyAt(C, SCREENS, S.i);
+  const waiting = waitingAt(s, stop, joined);
+  const n = joined.length + (waiting ? 1 : 0);
+  const leadX = LEFT + n * SLOT;
+  const want = ["crew", ...joined, ...(waiting ? [waiting] : [])];
+  convoy.querySelectorAll(".rider").forEach((el) => !want.includes(el.dataset.p) && el.remove());
+  want.forEach((pid, k) => {
+    let el = convoy.querySelector(`.rider[data-p="${pid}"]`);
+    const fresh = !el;
+    if (fresh) {
+      el = rider(pid);
+      if (pid === waiting) el.classList.add("waiting");
+      convoy.appendChild(el);
+    }
+    const x = pid === "crew" ? leadX : leadX - k * SLOT;
+    el.classList.toggle("lead", pid === "crew");
+    if (fresh) {
+      el.style.transition = "none";
+      el.style.setProperty("--x", `${x}px`);
+      void el.offsetWidth;
+      el.style.transition = "";
+    } else el.style.setProperty("--x", `${x}px`);
+    const joining = el.classList.contains("waiting") && pid !== waiting;
+    el.classList.toggle("waiting", pid === waiting);
+    if (joining && forward && !reduceMotion()) {
+      el.classList.remove("joined");
+      void el.offsetWidth;
+      el.classList.add("joined");
+    }
+    const name = pid === "crew" ? U("brand") : C.personas[pid].name;
+    el.querySelector(".tag > span").textContent = name;
+  });
+  // The palace: the full convoy rolls in together
+  if (s.beat === "arrive" && stop?.arrival && forward && !reduceMotion()) {
+    convoy.classList.remove("roll-in");
+    void convoy.offsetWidth;
+    convoy.classList.add("roll-in");
+  }
+  const lead = convoy.querySelector(".rider.lead");
+  lead.classList.toggle("rev", s.beat === "fired");
+
+  // The milestone: the stop's km and name in its colour (sliding in from the horizon on a ride)
+  const sign = $("#sign");
+  const signKey = s.beat === "lobby" || PROLOGUE.includes(s.beat) ? "start" : stop?.id || "";
+  if (sign.dataset.k !== signKey) {
+    sign.dataset.k = signKey;
+    const p = s.beat === "lobby" || PROLOGUE.includes(s.beat) ? C.places[0] : placeOf(C, stop);
+    const pid = signKey === "start" ? "lakshmi" : stopPersona(stop);
+    const same = stop && C.stops.filter((x) => x.place === stop.place).indexOf(stop) > 0;
+    sign.innerHTML = p ? milestone(pid, km(p.km), same ? stop.spot : p.name) : stop ? milestone("lakshmi", stop.sign || stop.spot, "", "local_gas_station") : "";
+  }
+  sign.classList.toggle("beside", s.beat === "lobby");
+  sign.style.setProperty("--x", `${leadX + 192 + 24}px`);
+  if (s.beat === "ride" && forward) {
+    sign.classList.remove("arriving");
+    void sign.offsetWidth;
+    sign.style.animationDuration = `${cfg("rideMs", 3000)}ms`;
+    sign.classList.add("arriving");
+  } else if (s.beat !== "ride") sign.classList.remove("arriving");
+
+  // Bottom HUD: route progress (and the lobby's tagline), fuel
+  const cur = Math.max(0, routeAt(C, SCREENS, S.i));
+  const personaAt = (p) => {
+    if (stop && stop.place === p.id) return stopPersona(stop);
+    return stopPersona(C.stops.find((x) => x.place === p.id && x.persona)) || "crew";
+  };
+  const rk = JSON.stringify([s.beat === "lobby", cur, s.beat === "ride", stop?.id]);
+  if (rk !== roadKey) {
+    roadKey = rk;
+    $("#route").innerHTML = `<nav class="stops">${route(C, cur, { lobby: s.beat === "lobby", personaAt, riding: s.beat === "ride" })}</nav>`;
+    $("#foot").classList.toggle("lobby", s.beat === "lobby");
+  }
+  $("#fuel").classList.toggle("hidden", s.beat === "lobby");
+}
+
+// ------------------------------------------------------------------ timers: THINK and VOTE clocks (mm:ss and a draining bar)
 const voteView = () => {
   const v = S.vote;
+  if (!v?.slot) return { slot: null, duration: 0, remainingMs: 0, paused: false, locked: false, running: false };
   const left = v.locked ? 0 : v.paused || !v.endsAt ? v.left : Math.max(0, v.endsAt - Date.now());
   return { slot: v.slot, duration: v.duration, remainingMs: left, paused: !!v.paused, locked: !!v.locked, running: !!v.endsAt && !v.paused && !v.locked };
 };
-/** A vote step on screen: start its countdown once. A step counted down before keeps its state (back / reload). */
-function ensureVote() {
-  if (S.phase !== "ask" || busy) return;
-  const slot = slotOf();
-  if (S.vote.slot === slot) return;
-  const d = voteSeconds();
-  S.vote = { ...freshVote(slot, d), endsAt: S.closed[slot] ? null : Date.now() + d * 1000, locked: !!S.closed[slot] };
-  lastTick = 0;
-  save();
-}
-/** Lock votes: phones lock, the bars freeze, "Votes locked" shows, the room's result settles and fuel is added. */
-function lockVotes(auto = false) {
-  if (S.phase !== "ask") return;
-  const s = step();
-  const before = fuel();
-  S.vote = { ...S.vote, locked: true, endsAt: null, paused: false, left: 0 };
-  S.closed[s.id] = true;
-  const t = tallyOf(s.id);
-  const riders = live.on ? live.riders : null;
-  // Host Mode can't count phones: the room answers by show of hands, so it counts as everyone on board.
-  const ratio = live.on ? (riders ? Math.min(1, t.n / riders) : 0) : 1;
-  S.final[s.id] = { n: t.n, riders, ratio };
-  S.phase = "locked";
-  sound.lock();
-  commit();
-  flashFuel(before, fuel(), s.type === "pump");
-  if (auto) toast("Time's up: votes locked.", 2500);
-}
-function reopenVotes(seconds = 15) {
-  const s = step();
-  if (!isVote(s) || !["ask", "locked"].includes(S.phase)) return;
-  delete S.final[s.id];
-  delete S.closed[s.id];
-  S.phase = "ask";
-  S.vote = { slot: s.id, locked: false, paused: false, endsAt: Date.now() + seconds * 1000, left: seconds * 1000, duration: Math.max(S.vote.duration || 0, seconds) };
-  commit();
-}
-function pauseVote() {
-  if (S.phase !== "ask" || S.vote.locked) return;
-  const v = S.vote;
-  S.vote = v.paused ? { ...v, paused: false, endsAt: Date.now() + v.left } : { ...v, paused: true, left: Math.max(0, v.endsAt - Date.now()), endsAt: null };
-  toast(S.vote.paused ? "Countdown paused" : "Countdown running", 1600);
-  commit();
-}
-function extendVote(seconds = 15) {
-  if (S.phase !== "ask") return;
-  if (S.vote.locked) return reopenVotes(seconds);
-  const v = S.vote;
-  const left = (v.paused ? v.left : Math.max(0, v.endsAt - Date.now())) + seconds * 1000;
-  S.vote = { ...v, left, endsAt: v.paused ? null : Date.now() + left, duration: Math.max(v.duration, Math.ceil(left / 1000)) };
-  toast(`+${seconds} seconds`, 1400);
-  commit();
-}
-/** V / the moderator: lock now, or reopen (15 more seconds). */
-function toggleVote() {
-  if (S.phase === "ask" && !S.vote.locked) return lockVotes();
-  if (S.phase === "ask" || S.phase === "locked") return reopenVotes(15);
-}
+const thinkView = () => {
+  const t = S.think;
+  if (!t?.key || t.key !== scr().key) return null;
+  const left = t.done ? 0 : t.paused ? t.left : Math.max(0, t.endsAt - Date.now());
+  return { remainingMs: left, duration: t.duration, paused: !!t.paused, done: !!t.done };
+};
 let lastTick = 0;
-/** Every 250 ms: empty the bar, tick softly in the last 5 seconds, lock at zero. */
-function renderVote() {
-  const bar = $("#cdFill");
-  const v = voteView();
-  const onStep = S.phase === "ask" && v.slot === slotOf();
-  const locked = (onStep && v.locked) || S.phase === "locked" || S.phase === "reveal";
-  const cd = $("#countdown");
-  if (cd) {
-    cd.classList.toggle("hidden", !onStep || v.locked);
-    cd.classList.toggle("paused", v.paused);
-    cd.classList.toggle("ending", v.running && v.remainingMs <= 5000);
+function showClock(root, ms, frac, paused) {
+  root.querySelectorAll("[data-clock]").forEach((c) => {
+    c.textContent = clock(ms);
+    c.classList.toggle("paused", !!paused);
+  });
+  root.querySelectorAll("[data-meter]").forEach((m) => (m.style.transform = `scaleX(${Math.max(0, Math.min(1, frac))})`));
+}
+function updateTimers() {
+  const s = scr();
+  const root = current();
+  if (!root) return;
+  if (s.beat === "think") {
+    const tv = thinkView();
+    showClock(root, tv?.remainingMs, tv && tv.duration ? tv.remainingMs / (tv.duration * 1000) : 0, tv?.paused);
+    if (tv && !tv.done && !tv.paused && tv.remainingMs <= 0 && !busy) {
+      S.think.done = true;
+      return next(); // the think time ran out: the options appear
+    }
   }
-  if (bar && onStep) bar.style.transform = `scaleX(${v.duration ? Math.min(1, v.remainingMs / (v.duration * 1000)) : 0})`;
-  $("#lockedTag")?.classList.toggle("hidden", !locked);
-  document.querySelector("#scene > *")?.classList.toggle("locked", locked);
-  if (!onStep || !v.running) return;
-  const sec = Math.ceil(v.remainingMs / 1000);
-  if (sec <= 5 && sec >= 1 && sec !== lastTick) {
-    lastTick = sec;
-    sound.tick();
+  if (s.beat === "vote") {
+    const v = voteView();
+    const on = v.slot === s.slot && !v.locked && !S.closed[s.slot];
+    showClock(root, on ? v.remainingMs : 0, on && v.duration ? v.remainingMs / (v.duration * 1000) : 0, v.paused);
+    if (on && live.on && !openedAt[s.slot]) openedAt[s.slot] = Date.now();
+    if (on && v.running) {
+      const sec = Math.ceil(v.remainingMs / 1000);
+      if (sec <= 5 && sec >= 1 && sec !== lastTick) {
+        lastTick = sec;
+        sound.tick();
+      }
+      if (v.remainingMs <= 0 && !busy) return next(); // time's up: lock
+    }
   }
-  if (v.remainingMs <= 0) lockVotes(true);
 }
 
-/** Host Mode (or a presenter extra in Live): add an answer to the word cloud. Two clouds: W = first, N = second. */
-async function addWord(which = 0) {
-  const s = step();
-  if (!isCloud(s) || !["ask", "locked"].includes(S.phase)) return;
-  const part = s.format === "dualcloud" ? s.parts[which] : null;
-  if (which && !part) return;
-  const text = await modal({ title: part ? `Add to “${part.title}”` : "Add to the word cloud", text: "Type an answer from the room (up to 40 characters).", input: true, inputType: "text", ok: "Add it" });
-  return addWordText(text, which);
+function startVote(slot, seconds) {
+  const d = seconds || cfg("voteSeconds", 30);
+  S.vote = { slot, duration: d, endsAt: Date.now() + d * 1000, left: d * 1000, paused: false, locked: false };
+  delete S.closed[slot];
+  delete S.final[slot];
+  lastTick = 0;
 }
-async function addWordText(text, which = 0) {
-  const s = step();
-  if (!text || !isCloud(s) || !["ask", "locked"].includes(S.phase)) return;
-  const part = s.format === "dualcloud" ? s.parts[which] : null;
-  if (which && !part) return;
-  const clean = String(text).replace(/\s+/g, " ").trim().slice(0, 40);
-  if (!clean) return;
-  if (isProfane(clean)) return toast("That one was filtered. Try different words.");
-  if (live.on) {
-    try { await adminCall({ action: "addWord", text: clean, ...(part ? { part: part.id } : {}) }); } catch { toast("Couldn't reach the server. Try again in a moment."); }
-    return;
+function lockVotes(slot) {
+  const t = tallyOf(slot);
+  S.vote = { ...S.vote, locked: true, endsAt: null, left: 0, paused: false };
+  S.closed[slot] = true;
+  // Host mode can't count phones: the room answers by show of hands, so it counts as everyone on board.
+  const ratio = live.on ? (live.riders ? Math.min(1, t.n / live.riders) : 0) : 1;
+  S.final[slot] = { n: t.n, riders: live.on ? live.riders : null, ratio };
+  sound.lock();
+}
+
+// ------------------------------------------------------------------ flow
+/** Move to screen t, running what entering it means (start a timer, lock votes, play a ride). */
+function go(t) {
+  if (t < 0 || t > last) return;
+  const from = S.i;
+  const s = SCREENS[t];
+  S.i = t;
+  const fwd = t > from;
+  if (s.beat === "think") S.think = fwd ? { key: s.key, endsAt: Date.now() + cfg("thinkSeconds", 15) * 1000, duration: cfg("thinkSeconds", 15) } : { key: s.key, done: true, duration: cfg("thinkSeconds", 15) };
+  if (s.beat === "vote") {
+    if (fwd && S.vote.slot !== s.slot && !S.closed[s.slot]) startVote(s.slot);
+    if (!fwd) delete S.final[s.slot]; // back from LOCK: the result comes off; votes stay closed until reopened
   }
-  const hit = S.words.find((w) => w.slot === s.id && partOf(w) === (part?.id || "") && w.text.toLowerCase() === clean.toLowerCase());
-  if (hit) hit.n++;
-  else S.words.push({ slot: s.id, text: clean, n: 1, ...(part ? { part: part.id } : {}) });
+  if (s.beat === "locked" && !S.final[s.slot]) lockVotes(s.slot);
+  if (s.beat === "reveal") sound.reveal();
+  if (s.beat === "fired") sound.roar();
+  commit();
+  if (s.transient) {
+    busy = true;
+    const ms = s.beat === "fired" ? FIRE_MS : cfg("rideMs", 3000);
+    setTimeout(() => {
+      busy = false;
+      if (S.i === t) go(t + 1);
+    }, reduceMotion() ? 300 : ms);
+  }
+}
+function next() {
+  if (busy || modalOpen) return;
+  go(S.i + 1);
+}
+function back() {
+  if (busy || modalOpen || S.i === 0) return;
+  let t = S.i - 1;
+  while (t > 0 && SCREENS[t].transient) t--;
+  go(t);
+}
+function skip() {
+  const t = pumpSkip(C, SCREENS, S.i);
+  if (t != null && !busy) go(t);
+}
+/** Lock now (on VOTE), or reopen voting for 15 more seconds (on a closed VOTE or on LOCK). */
+function toggleVote() {
+  const s = scr();
+  if (s.beat === "vote" && !S.closed[s.slot]) return next();
+  const vi = s.beat === "locked" ? s.i - 1 : s.beat === "vote" ? s.i : -1;
+  if (vi < 0) return;
+  startVote(SCREENS[vi].slot, cfg("extendSeconds", 15));
+  S.i = vi;
+  commit();
+}
+function pauseTimer() {
+  const s = scr();
+  if (s.beat === "think" && S.think.key === s.key && !S.think.done) {
+    const t = S.think;
+    S.think = t.paused ? { ...t, paused: false, endsAt: Date.now() + t.left } : { ...t, paused: true, left: Math.max(0, t.endsAt - Date.now()) };
+    return commit();
+  }
+  if (s.beat !== "vote" || S.vote.slot !== s.slot || S.vote.locked) return;
+  const v = S.vote;
+  S.vote = v.paused ? { ...v, paused: false, endsAt: Date.now() + v.left } : { ...v, paused: true, left: Math.max(0, v.endsAt - Date.now()), endsAt: null };
+  commit();
+}
+function extendTimer(sec = cfg("extendSeconds", 15)) {
+  const s = scr();
+  if (s.beat === "think") {
+    const t = S.think;
+    const left = (t.done ? 0 : t.paused ? t.left : Math.max(0, t.endsAt - Date.now())) + sec * 1000;
+    S.think = { key: s.key, duration: Math.max(t.duration || 0, Math.ceil(left / 1000)), paused: !!t.paused && !t.done, left, endsAt: Date.now() + left };
+    return commit();
+  }
+  if (s.beat !== "vote") return;
+  if (S.closed[s.slot] || S.vote.slot !== s.slot) return toggleVote();
+  const v = S.vote;
+  const left = (v.paused ? v.left : Math.max(0, v.endsAt - Date.now())) + sec * 1000;
+  S.vote = { ...v, left, endsAt: v.paused ? null : Date.now() + left, duration: Math.max(v.duration, Math.ceil(left / 1000)) };
+  commit();
+}
+/** Host mode (or overriding Live): the room's pick, by letter or number. index -1 clears. */
+function enterPick(index) {
+  const s = scr();
+  const step = stepOf(C, s);
+  if (!step || !isVoteStep(step) || !["vote", "locked"].includes(s.beat)) return;
+  if (index === -1) {
+    delete S.manual[step.id];
+    return commit();
+  }
+  const o = step.options[index];
+  if (!o) return;
+  const m = (S.manual[step.id] = { ...(S.manual[step.id] || {}) });
+  if (step.format === "pickn") {
+    m.picks = m.picks || [];
+    if (m.picks.includes(o.id)) m.picks = m.picks.filter((x) => x !== o.id);
+    else if (m.picks.length < step.n) m.picks.push(o.id);
+    else toast(`The room's top ${step.n} is full. Tap a picked one again to remove it, or Clear.`);
+  } else m.choice = m.choice === o.id ? undefined : o.id;
   commit();
 }
 
 function commit() {
-  $("#toast").classList.remove("show");
   save();
   render();
   if (live.on) syncServer();
 }
 
-// ------------------------------------------------------------------ discussion timer (moderator only)
-const timerRunning = () => !!(S?.timer?.endsAt && S.timer.endsAt > Date.now());
-function setTimer(cmd, duration, fromRemote) {
-  const d = Number(duration) || S.timer.duration || cfg("timerSeconds", 60);
-  S.timer = cmd === "start" ? { endsAt: Date.now() + d * 1000, duration: d, startedAt: Date.now() } : { endsAt: null, duration: d };
-  save();
-  announce();
-  if (live.on && !fromRemote) adminCall({ action: "timer", cmd, duration: d }).catch(() => {});
-}
 let lastAnnounce = 0;
 function tick() {
   if (!S) return;
-  renderVote();
-  renderFuel();
-  if (performance.now() - lastAnnounce > 1000) announce(); // keeps the moderator's countdown fresh
+  updateTimers();
+  if (performance.now() - lastAnnounce > 1000) announce();
 }
 
-// ------------------------------------------------------------------ QR, toast, modal
-function makeQR(target, url) {
-  if (!target) return;
-  try {
-    const qr = qrcode(0, "M");
-    qr.addData(url);
-    qr.make();
-    target.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
-  } catch {}
-}
-function updateQR() {
-  const card = $("#qrCard");
-  if (live.on && card.dataset.url !== voteUrl()) {
-    makeQR($("#qrSmall"), voteUrl());
-    $("#qrUrl").textContent = shortUrl();
-    card.dataset.url = voteUrl();
-  }
-  const open = live.on && S.phase === "ask" && !S.vote.locked && !busy;
-  card.classList.toggle("hidden", !open); // only while voting is open
-  if (open && !openedAt[slotOf()]) openedAt[slotOf()] = Date.now();
-}
-let toastT;
-let lastToast = { text: "", at: 0 };
-/** A short message: small on the projector (for keyboard use) and repeated in the moderator view. */
-function toast(msg, ms = 3800) {
-  const t = $("#toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(toastT);
-  toastT = setTimeout(() => t.classList.remove("show"), ms);
+// ------------------------------------------------------------------ toast, modal
+/** Messages for the presenter appear in the dock, which shows for a few seconds. */
+function toast(msg) {
   lastToast = { text: msg, at: Date.now() };
-  announce();
+  showDock(6000);
 }
 let modalOpen = false;
-function modal({ title, text, input, inputType = "password", ok, error = "" }) {
+function modal({ title, text, input, ok, error = "" }) {
   return new Promise((resolve) => {
     modalOpen = true;
-    $("#modalBox").innerHTML = `<h3 id="modalTitle">${esc(title)}</h3><p>${esc(text)}</p>${input ? `<input id="modalInput" type="${inputType}" maxlength="60" autocomplete="off" aria-labelledby="modalTitle" />` : ""}<div class="err" role="alert">${esc(error)}</div><div class="row"><button type="button" id="modalCancel">Cancel</button><button type="button" class="go" id="modalOk">${esc(ok)}</button></div>`;
+    $("#modalBox").innerHTML = `<h3 id="modalTitle">${esc(title)}</h3><p>${esc(text)}</p>${input ? `<input id="modalInput" type="password" maxlength="60" autocomplete="off" aria-labelledby="modalTitle" />` : ""}<div class="err" role="alert">${esc(error)}</div><div class="row"><button type="button" id="modalCancel">Cancel</button><button type="button" class="go" id="modalOk">${esc(ok)}</button></div>`;
     $("#modal").classList.remove("hidden");
     const inp = $("#modalInput");
     (inp || $("#modalOk")).focus();
@@ -873,66 +1011,139 @@ function modal({ title, text, input, inputType = "password", ok, error = "" }) {
   });
 }
 
-/** fromModerator: the moderator view already asked for confirmation (and the PIN), so no prompt here. */
-async function resetGame(fromModerator = false) {
-  const pin = fromModerator ? localStorage.getItem(PIN_KEY) ?? "" : await modal({ title: "Reset the ride?", text: live.on ? "This clears every answer and word on the server and returns to the lobby. Enter the PIN to confirm." : "This clears the room's answers and returns to the lobby.", input: live.on, ok: "Reset the ride" });
-  if (pin === null) return;
+async function resetGame() {
+  let pin = "";
+  try { pin = localStorage.getItem(PIN_KEY) ?? ""; } catch {}
   if (live.on) {
     try {
       const r = await adminCall({ action: "reset" }, pin);
-      if (r.status === 401) return toast("That PIN didn't match. Nothing was reset.");
       if (!r.ok) return toast("The server couldn't reset the ride. Nothing changed.");
-      try { localStorage.setItem(PIN_KEY, pin); } catch {}
       S = fresh();
       S.round = r.data.state.round;
     } catch {
       return toast("Couldn't reach the server. Nothing was reset.");
     }
   } else S = fresh();
-  sceneKey = "";
-  band.setReached(0);
-  stats.arrivals.length = 0;
+  cardKey = bgKey = hudHTML = roadKey = "";
+  prevI = null;
+  $("#convoy").innerHTML = "";
   commit();
   toast("Ride reset. Ready in the lobby.");
 }
 
-// ------------------------------------------------------------------ moderator: notes and remote control
-/** What the moderator view needs to follow the projector and drive it (same laptop: BroadcastChannel). */
-function announce() {
-  if (!channel || !S || !STEPS) return;
-  lastAnnounce = performance.now();
-  const s = step();
-  const t = voting() ? tallyOf(s.id) : null;
-  channel.postMessage({
-    type: "state", i: S.i, phase: S.phase, slot: s.id, mode: live.on ? "live" : "host", busy,
-    lost: live.lost && !live.on, canReturn: live.canReturn && !live.on, privateHost: live.on && isPrivateHost(new URL(voteUrl()).hostname),
-    n: t?.n || 0, counts: t?.counts || {}, riders: live.riders, low: lowTurnout(), fuel: fuel(),
-    timer: S.timer, vote: voteView(), muted: sound.muted, manual: S.manual[s.id] || null,
-    help: entryHelp(s), toast: lastToast, words: S.words.filter((w) => w.slot === s.id), at: Date.now(),
-  });
+// ------------------------------------------------------------------ commands (the dock and the keyboard)
+// ------------------------------------------------------------------ the presenter's dock (on the projector, shown only on mouse move)
+// Everything the presenter needs lives here: next/back, timers, Live/Host, sound, notes, placeholders, reset.
+// It hides itself (and the cursor) after a few seconds, so the audience sees the story, not the controls.
+let dockUntil = 0;
+let dockPanel = ""; // "notes" | "todo" | ""
+let dockHTML = "";
+const ALL_PH = () => {
+  const m = new Map();
+  SCREENS.forEach((x) => placeholdersOf(C, x).forEach((p) => !m.has(p.what) && m.set(p.what, x.i)));
+  return [...m].map(([what, i]) => ({ what, i }));
+};
+function showDock(ms = 3000) {
+  dockUntil = Math.max(dockUntil, Date.now() + ms);
+  $("#viewport").classList.add("dock-on");
+  renderDock(true);
 }
-/** A command from the moderator view (BroadcastChannel or relayed by the server). */
+function announce() {
+  lastAnnounce = performance.now();
+  renderDock();
+}
+function renderDock(force) {
+  if (!S || !SCREENS || (!force && !$("#viewport").classList.contains("dock-on"))) return;
+  const s = scr();
+  const stop = stopOf(C, s);
+  const step = stepOf(C, s);
+  const v = voteView();
+  const voting = step && isVoteStep(step) && ["vote", "locked"].includes(s.beat);
+  const b = (cmd, ic, label = "", cls = "", title = label) => `<button type="button" class="d-btn ${cls}" data-cmd="${cmd}" title="${esc(title)}">${icon(ic)}${label ? `<span>${esc(label)}</span>` : ""}</button>`;
+  const ctl = [];
+  if (s.beat === "think") {
+    const tv = thinkView();
+    ctl.push(b("pause", tv?.paused ? "play_arrow" : "pause", "", "", tv?.paused ? "Resume" : "Pause"), b("extend", "add", "15 s", "", "Add 15 seconds"));
+  }
+  if (s.beat === "vote" && !S.closed[s.slot] && !v.locked) ctl.push(b("pause", v.paused ? "play_arrow" : "pause", "", "", v.paused ? "Resume" : "Pause"), b("extend", "add", "15 s", "", "Add 15 seconds"));
+  else if (voting) ctl.push(b("closeVote", "restart_alt", "Reopen voting"));
+  if (pumpSkip(C, SCREENS, S.i) != null) ctl.push(b("skip", "skip_next", "Skip refuel"));
+
+  const flags = [];
+  if (lowTurnout()) flags.push("Low turnout. Ask the room to join.");
+  if (live.on && isPrivateHost(new URL(voteUrl()).hostname) && ["lobby", "vote"].includes(s.beat)) flags.push("Phones can't reach this local address. Set config.publicUrl in en.json.");
+  if (!sound.muted && !(sound.ctx && sound.ctx.state === "running") && ["cold", "title", "ignite"].includes(s.beat)) flags.push("Sound is waiting: press any key once.");
+  if (voting && !live.on) flags.push(step.format === "pickn" ? `Click the room's top ${step.n} on the screen (or 1–9).` : "Click the room's answer on the screen (or A–D).");
+  const toastOn = lastToast.text && Date.now() - lastToast.at < 6000;
+
+  const ph = ALL_PH();
+  const here = new Set(placeholdersOf(C, s).map((x) => x.what));
+  const core = step?.core || (["handover", "card", "closing"].includes(s.beat) ? [...(stop?.steps || [])].reverse().find((x) => x.core)?.core : "");
+  const note = step?.note || (["cold", "title"].includes(s.beat) ? C.coldOpen.note : ["crew", "fact", "crewClose"].includes(s.beat) ? C.crew.note : s.beat === "ignite" ? C.ignition.note : "");
+  const panel =
+    dockPanel === "notes"
+      ? `<div class="d-panel">${core ? `<p>${esc(core)}</p>` : ""}${note ? `<p class="muted">${esc(note)}</p>` : ""}${step?.revealNote && ["think", "vote", "locked"].includes(s.beat) ? `<p class="muted"><b>Reveal:</b> ${esc(step.revealNote)}</p>` : ""}${stop?.steps.some((x) => x.sites) ? `<p>${stop.steps.find((x) => x.sites).sites.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${icon("open_in_new")} ${esc(x.title)}</a>`).join(" ")}</p>` : ""}${!core && !note ? `<p class="muted">No notes for this screen.</p>` : ""}</div>`
+      : dockPanel === "todo"
+        ? `<div class="d-panel"><b>Placeholders (hidden from the audience)</b><ul>${ph.map((x) => `<li class="${here.has(x.what) ? "here" : ""}"><span>${esc(x.what)}</span><span class="mono">screen ${x.i + 1}</span></li>`).join("")}</ul><p class="muted">Edit public/content/en.json, then reload.</p></div>`
+        : "";
+  const html = `${toastOn ? `<p class="d-toast">${esc(lastToast.text)}</p>` : ""}${flags.map((f) => `<p class="d-flag">${esc(f)}</p>`).join("")}${panel}
+    <div class="d-bar">
+      ${b("back", "arrow_back", "", "", "Back")}
+      <button type="button" class="d-btn go" data-cmd="next" ${busy || S.i >= last ? "disabled" : ""}>${icon("arrow_forward")}<span>${esc(nextLabel(SCREENS, S.i))}</span></button>
+      ${ctl.length ? `<i class="d-sep"></i>${ctl.join("")}` : ""}
+      <i class="d-sep"></i>
+      ${live.canReturn && !live.on ? b("returnLive", "bolt", "Return to Live", "warn") : `<button type="button" class="d-btn" data-cmd="mode" title="${live.on ? "Switch to Host mode" : "Go live"}"><i class="d-dot ${live.on ? "on" : ""}"></i><span>${live.on ? `Live · ${live.riders}` : U("hostMode")}</span></button>`}
+      ${b("mute", sound.muted ? "volume_off" : "volume_up", "", "", sound.muted ? "Sound on" : "Sound off")}
+      <button type="button" class="d-btn ${dockPanel === "notes" ? "on" : ""}" data-panel="notes" title="Notes">${icon("menu_book")}</button>
+      ${ph.length ? `<button type="button" class="d-btn amber ${dockPanel === "todo" ? "on" : ""} ${here.size ? "here" : ""}" data-panel="todo" title="Placeholders">${icon("pending")}<span>${ph.length}</span></button>` : ""}
+      ${b("reset", "restart_alt", "", "", "Reset the ride")}
+    </div>`;
+  if (html === dockHTML) return;
+  dockHTML = html;
+  $("#dock").innerHTML = html;
+}
+$("#dock").addEventListener("click", (e) => {
+  const pb = e.target.closest("[data-panel]");
+  if (pb) {
+    dockPanel = dockPanel === pb.dataset.panel ? "" : pb.dataset.panel;
+    return renderDock(true);
+  }
+  const cb = e.target.closest("[data-cmd]");
+  if (!cb || cb.disabled) return;
+  if (cb.dataset.cmd === "reset" && !confirm(live.on ? "Reset the ride? This clears every answer on the server and returns to the lobby." : "Reset the ride? This clears the room's answers and returns to the lobby.")) return;
+  runCommand({ cmd: cb.dataset.cmd });
+  showDock();
+});
+addEventListener("mousemove", () => showDock());
+setInterval(() => {
+  const vp = $("#viewport");
+  if (vp.classList.contains("dock-on") && Date.now() > dockUntil && !dockPanel && !$("#dock").matches(":hover") && !(lastToast.text && Date.now() - lastToast.at < 6000)) vp.classList.remove("dock-on");
+}, 500);
+/** Host mode (or overriding Live): click an answer on the stage to mark it as the room's pick. */
+$("#main").addEventListener("click", (e) => {
+  const o = e.target.closest(".opt[data-o]");
+  const s = scr();
+  const step = stepOf(C, s);
+  if (!o || !step || !isVoteStep(step) || !["vote", "locked"].includes(s.beat)) return;
+  enterPick(step.options.findIndex((x) => x.id === o.dataset.o));
+});
+
 function runCommand(c) {
   if (!c || !S || modalOpen) return;
   switch (c.cmd) {
-    case "next": case "back": case "timer": case "mode": case "returnLive":
-      return act(c.cmd);
+    case "next": return next();
+    case "back": return back();
+    case "skip": return skip();
     case "closeVote": return toggleVote();
-    case "pause": return pauseVote();
-    case "extend": return extendVote(Number(c.arg) || 15);
-    case "addWord": return addWordText(c.text, Number(c.arg) || 0);
+    case "pause": return pauseTimer();
+    case "extend": return extendTimer(Number(c.arg) || cfg("extendSeconds", 15));
     case "key": return typeof c.key === "string" && handleKey(c.key);
     case "mute": return toggleMute();
-    case "reset": return resetGame(true);
+    case "mode": return live.on ? fallbackToHost("Host mode: enter the room's answers by hand.") : enableLive(false);
+    case "returnLive": return enableLive(false);
+    case "reset": return resetGame();
   }
 }
-if (channel)
-  channel.onmessage = (ev) => {
-    const m = ev.data || {};
-    if (m.type === "timer") setTimer(m.cmd, m.duration, m.viaServer);
-    if (m.type === "hello") announce();
-    if (m.type === "cmd") runCommand(m);
-  };
 
 // ------------------------------------------------------------------ Live mode
 async function fetchT(url, opts = {}, ms = 8000) {
@@ -941,12 +1152,13 @@ async function fetchT(url, opts = {}, ms = 8000) {
   try { return await fetch(url, { ...opts, signal: ctl.signal, cache: "no-store" }); } finally { clearTimeout(t); }
 }
 async function adminCall(body, pin) {
-  const r = await fetchT(`${location.origin}/api/admin`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, pin: pin ?? localStorage.getItem(PIN_KEY) }) });
+  let p = pin;
+  if (p == null) try { p = localStorage.getItem(PIN_KEY); } catch {}
+  const r = await fetchT(`${location.origin}/api/admin`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, pin: p }) });
   let data = null;
   try { data = await r.json(); } catch {}
   return { ok: r.ok, status: r.status, data };
 }
-/** Is a Live server there? A plain static server (npm run host) answers { hostOnly: true }. */
 async function serverUp(ms) {
   const r = await fetchT(`${location.origin}/api/state`, {}, ms);
   if (!r.ok) return false;
@@ -958,7 +1170,7 @@ async function enableLive(silent) {
   if (!location.protocol.startsWith("http")) return toast("Live voting needs the game served from the Cloudflare Worker.");
   let up = false;
   try { up = await serverUp(4000); } catch {}
-  if (!up) return fallbackToHost(silent || live.hostOnly ? null : "Can't reach the live server. Staying in Host mode; it reconnects when the server is back.");
+  if (!up) return fallbackToHost(silent || live.hostOnly ? null : "Can't reach the live server. Staying in Host mode.");
   let pin = null;
   try { pin = localStorage.getItem(PIN_KEY); } catch {}
   let error = "";
@@ -968,7 +1180,7 @@ async function enableLive(silent) {
       if (pin === null) return fallbackToHost(null);
     }
     let r;
-    try { r = await adminCall({ action: "check" }, pin); } catch { return fallbackToHost("Can't reach the live server. Staying in Host mode (press L to try again)."); }
+    try { r = await adminCall({ action: "check" }, pin); } catch { return fallbackToHost("Can't reach the live server. Staying in Host mode."); }
     if (r.status === 401) {
       pin = null;
       error = "That PIN didn't match. Try again.";
@@ -984,16 +1196,14 @@ async function enableLive(silent) {
     S.round = r.data.state.round;
     const wasLost = live.lost;
     Object.assign(live, { on: true, lost: false, canReturn: false, lastOk: Date.now() });
-    $("#qrCard").dataset.url = "";
-    sceneKey = "";
+    cardKey = hudHTML = "";
     connectWS();
     startPolling();
-    commit(); // pushes the current step to the server: the game carries on where it is
+    commit(); // the game carries on where it is
     if (!silent || wasLost) toast(wasLost ? "Back to Live. Phones rejoin on the current step." : `Live voting on: ${shortUrl()}`);
     return;
   }
 }
-/** Host Mode. After losing the server, keep checking; offer "Return to Live" when it answers again. */
 function fallbackToHost(msg) {
   const was = live.on;
   live.on = false;
@@ -1007,16 +1217,12 @@ function fallbackToHost(msg) {
     try { live.ws.close(); } catch {}
     live.ws = null;
   }
-  // keep the approved words of the cloud on screen
-  const s = step();
-  for (const w of S.liveWords || []) if (!S.words.find((x) => x.slot === s.id && x.text === w.text && partOf(x) === partOf(w))) S.words.push({ ...w, slot: s.id });
-  sceneKey = "";
+  cardKey = hudHTML = "";
   save();
   render();
-  if (msg) toast(msg, was ? 6000 : 4000);
+  if (msg) toast(msg);
 }
 let lastHealth = 0;
-/** Every second: Live silent > 5 s → Host Mode; in Host Mode, every 3 s check whether the server is back. */
 function watchdog() {
   const now = Date.now();
   if (live.on && now - live.lastOk > LOST_AFTER_MS) return fallbackToHost("Lost the live server for 5 seconds. Switched to Host mode; answers so far are kept.");
@@ -1026,7 +1232,7 @@ function watchdog() {
       .then((ok) => {
         if (ok !== live.canReturn) {
           live.canReturn = ok;
-          if (ok && live.lost) toast("The live server is back. Press L, or Return to Live in the moderator view.", 6000);
+          if (ok && live.lost) toast("The live server is back. Press Return to Live.");
           announce();
         }
       })
@@ -1047,7 +1253,7 @@ function connectWS() {
       live.wsOpen = true;
       live.lastOk = Date.now();
       clearInterval(live.pingTimer);
-      live.pingTimer = setInterval(() => ws.readyState === 1 && ws.send("ping"), 2000); // keeps lastOk fresh
+      live.pingTimer = setInterval(() => ws.readyState === 1 && ws.send("ping"), 2000);
     };
     ws.onmessage = (ev) => {
       live.lastOk = Date.now();
@@ -1055,7 +1261,6 @@ function connectWS() {
       try {
         const m = JSON.parse(ev.data);
         if (m.type === "state") applyServerState(m.state);
-        if (m.type === "cmd") serverCommand(m.cmd);
       } catch {}
     };
     ws.onclose = () => {
@@ -1076,14 +1281,8 @@ function startPolling() {
       if (!r.ok) return;
       live.lastOk = Date.now();
       applyServerState(await r.json());
-    } catch {} // the watchdog switches to Host Mode after 5 s without any answer
+    } catch {}
   }, 1000);
-}
-/** A moderator command relayed by the server (the moderator on a phone). Each runs once, and only while fresh. */
-function serverCommand(c) {
-  if (!c || typeof c.id !== "number" || c.id <= live.lastCmd) return;
-  live.lastCmd = c.id;
-  if ((c.age ?? 0) < 4000) runCommand(c);
 }
 function applyServerState(st) {
   if (!st || !live.on) return;
@@ -1091,88 +1290,59 @@ function applyServerState(st) {
     S.round = st.round;
     S.tallies = {};
   }
-  if (st.cmd) serverCommand(st.cmd); // polling fallback: the last relayed command
-  // Tallies only for the step on screen; nothing carries over between steps
-  if (st.tally && st.slot === slotOf() && !S.final[st.slot]) S.tallies[st.slot] = st.tally;
+  // Tallies only for the step on screen, and only until its votes lock
+  if (st.tally && st.slot === scr().slot && !S.final[st.slot]) S.tallies[st.slot] = st.tally;
   if (typeof st.riders === "number") live.riders = st.riders;
-  if (Array.isArray(st.words)) S.liveWords = st.slot === slotOf() ? st.words : [];
-  if (typeof st.pending === "number") S.pending = st.pending;
-  const freshT = S.timer.endsAt && Date.now() - (S.timer.startedAt || 0) < 4000;
-  if (st.timer && !(freshT && !st.timer.running)) {
-    const endsAt = st.timer.running ? Date.now() + st.timer.remainingMs : null;
-    if (!!endsAt !== !!S.timer.endsAt || Math.abs((endsAt || 0) - (S.timer.endsAt || 0)) > 1500) S.timer = { ...S.timer, endsAt, duration: st.timer.duration };
-  }
   save();
   updateResults();
-  if (S.phase === "lobby") setCount($("#ridersCount"), live.riders);
-  updateStrip();
-  renderFuel();
+  updatePlayers();
+  updateGauge();
 }
-/** The server's view of the step on screen: which slot, and what phones should show. */
 function desired() {
-  const s = step();
-  switch (S.phase) {
-    case "lobby": return { slot: STEPS[0].id, phase: "idle" };
-    case "arrive": return { slot: s.id, phase: "arrive" };
-    case "ask": return { slot: s.id, phase: S.closed[s.id] ? "closed" : "open" };
-    case "locked": return { slot: s.id, phase: "closed" };
-    case "reveal": return { slot: s.id, phase: "reveal" };
-  }
-  return { slot: s.id, phase: "show" }; // intro, showcase (first state), reveal / persona / info cards, closing
+  const s = scr();
+  return { slot: s.slot, phase: phaseOf(s, !!S.closed[s.slot] || (s.beat === "vote" && S.vote.slot !== s.slot)) };
 }
 let seqN = 0;
-function syncServer(override) {
-  const want = { ...(override || desired()), seq: Date.now() * 1000 + (seqN++ % 1000) };
-  // The voting countdown goes with the step, so phones can show it too
+function syncServer() {
+  const want = { ...desired(), seq: Date.now() * 1000 + (seqN++ % 1000) };
+  const s = scr();
   const v = voteView();
-  const vote = !override && S.phase === "ask" && v.slot === slotOf() ? { remainingMs: v.remainingMs, duration: v.duration, paused: v.paused, locked: v.locked } : null;
+  const vote = s.beat === "vote" && v.slot === s.slot ? { remainingMs: v.remainingMs, duration: v.duration, paused: v.paused, locked: v.locked || !!S.closed[s.slot] } : null;
   live.chain = live.chain.then(async () => {
     if (!live.on) return;
     try {
       const r = await adminCall({ action: "set", slot: want.slot, phase: want.phase, seq: want.seq, vote });
-      if (r.status === 401) return fallbackToHost("The server didn't accept the PIN. Staying in Host mode (press L).");
+      if (r.status === 401) return fallbackToHost("The server didn't accept the PIN. Staying in Host mode.");
       if (!r.ok) throw new Error(r.status);
       live.lastOk = Date.now();
       applyServerState(r.data.state);
     } catch {
-      setTimeout(() => live.on && syncServer(), 1500); // the watchdog handles a server that stays away
+      setTimeout(() => live.on && syncServer(), 1500);
     }
   });
 }
 
-// ------------------------------------------------------------------ input
-function act(name) {
-  switch (name) {
-    case "next": return next();
-    case "back": return back();
-    case "closeVote": return toggleVote();
-    case "word": return addWord(0);
-    case "wordNever": return addWord(1);
-    case "timer": return setTimer(timerRunning() ? "stop" : "start");
-    case "reset": return resetGame();
-    case "mode": return live.on ? fallbackToHost("Host mode: enter the room's answers with the keyboard.") : enableLive(false);
-    case "returnLive": return enableLive(false);
-  }
-}
-/** One key (from the keyboard, a clicker, or the moderator's keypad). Returns true if it did something. */
+// ------------------------------------------------------------------ keyboard (and clickers)
 function handleKey(k) {
-  const map = { ArrowRight: "next", " ": "next", PageDown: "next", Enter: "next", ArrowLeft: "back", PageUp: "back", Backspace: "back", v: "closeVote", V: "closeVote", t: "timer", T: "timer", l: "mode", L: "mode", w: "word", W: "word", n: "wordNever", N: "wordNever" };
-  if (k === "p" || k === "P") return pauseVote(), true;
-  if (k === "+" || k === "=") return extendVote(15), true;
+  if (["ArrowRight", " ", "PageDown", "Enter"].includes(k)) return next(), true;
+  if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) return back(), true;
+  if (k === "v" || k === "V") return toggleVote(), true;
+  if (k === "p" || k === "P") return pauseTimer(), true;
+  if (k === "+" || k === "=") return extendTimer(), true;
   if (k === "m" || k === "M") return toggleMute(), true;
-  if (/^[1-9]$/.test(k)) return enter(Number(k) - 1), true;
-  if (k === "0") return enter(-1), true;
-  if (/^[a-dA-D]$/.test(k)) return enter(k.toUpperCase().charCodeAt(0) - 65), true;
-  if (map[k]) return act(map[k]), true;
+  if (k === "s" || k === "S") return skip(), true;
+  if (k === "l" || k === "L") return runCommand({ cmd: "mode" }), true;
+  if (/^[1-9]$/.test(k)) return enterPick(Number(k) - 1), true;
+  if (k === "0") return enterPick(-1), true;
+  if (/^[a-dA-D]$/.test(k)) return enterPick(k.toUpperCase().charCodeAt(0) - 65), true;
   return false;
 }
 addEventListener("keydown", (e) => {
   if (modalOpen || e.ctrlKey || e.metaKey || e.altKey || !S) return;
   const k = e.key;
   if (k === "f" || k === "F") return e.preventDefault(), document.fullscreenElement ? document.exitFullscreen?.() : document.documentElement.requestFullscreen?.().catch(() => {});
-  if (k === "h" || k === "H") return e.preventDefault(), document.body.classList.toggle("badge-hidden");
   if (handleKey(k)) e.preventDefault();
 });
 
-window.__ride = { get state() { return S; }, get live() { return live; }, get steps() { return STEPS; }, stats, screenId: () => screenId(), fuel: () => fuel(), nextLabel: () => nextLabel(C, STEPS, S.i, S.phase), placeholders: () => placeholdersOf(step()) };
+window.__ride = { get state() { return S; }, get screens() { return SCREENS; }, nextLabel: () => nextLabel(SCREENS, S.i) };
 init();

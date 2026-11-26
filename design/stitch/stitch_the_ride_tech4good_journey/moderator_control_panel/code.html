@@ -1,0 +1,359 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moderator · Control Panel — The Ride</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'crew-teal': '#0F766E',
+        'crew-teal-bright': '#2DD4BF',
+        'meera-forest': '#15803D',
+        'meera-forest-bright': '#4ADE80',
+        'lakshmi-saffron': '#D97706',
+        'lakshmi-saffron-bright': '#FBBF24',
+        'arif-indigo': '#4338CA',
+        'arif-indigo-bright': '#818CF8',
+        'ravi-terracotta': '#C2410C',
+        'ravi-terracotta-bright': '#FB923C',
+        'warning-amber': '#D97706',
+        'success-green': '#15803D',
+        'light-primary': '#005C55',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#0F766E',
+        'light-on-primary-container': '#A3FAEF',
+        'light-secondary': '#904D00',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FE932C',
+        'light-on-secondary-container': '#663500',
+        'light-tertiary': '#952C00',
+        'light-on-tertiary': '#FFFFFF',
+        'light-tertiary-container': '#BD3D07',
+        'light-on-tertiary-container': '#FFE4DD',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#FFF8F4',
+        'light-on-background': '#1E1B18',
+        'light-surface': '#FFF8F4',
+        'light-surface-dim': '#E0D9D3',
+        'light-surface-bright': '#FFF8F4',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#FAF2ED',
+        'light-surface-container': '#F4ECE7',
+        'light-surface-container-high': '#EEE7E1',
+        'light-surface-container-highest': '#E9E1DC',
+        'light-on-surface': '#1E1B18',
+        'light-surface-variant': '#D9E5E2',
+        'light-on-surface-variant': '#3E4947',
+        'light-outline': '#6E7977',
+        'light-outline-variant': '#BDC9C6',
+        'light-inverse-surface': '#33302C',
+        'light-inverse-on-surface': '#F7EFEA',
+        'light-inverse-primary': '#80D5CB',
+        'dark-primary': '#80D5CB',
+        'dark-on-primary': '#003733',
+        'dark-primary-container': '#0F766E',
+        'dark-on-primary-container': '#A3FAEF',
+        'dark-secondary': '#FFB77D',
+        'dark-on-secondary': '#4D2600',
+        'dark-secondary-container': '#D97707',
+        'dark-on-secondary-container': '#3C1C00',
+        'dark-tertiary': '#FFB59D',
+        'dark-on-tertiary': '#5D1800',
+        'dark-tertiary-container': '#BD3D07',
+        'dark-on-tertiary-container': '#FFE4DD',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#161310',
+        'dark-on-background': '#E9E1DC',
+        'dark-surface': '#161310',
+        'dark-surface-dim': '#161310',
+        'dark-surface-bright': '#3C3835',
+        'dark-surface-container-lowest': '#100E0B',
+        'dark-surface-container-low': '#1E1B18',
+        'dark-surface-container': '#221F1C',
+        'dark-surface-container-high': '#2D2926',
+        'dark-surface-container-highest': '#383431',
+        'dark-on-surface': '#E9E1DC',
+        'dark-surface-variant': '#3E4947',
+        'dark-on-surface-variant': '#BDC9C6',
+        'dark-outline': '#889391',
+        'dark-outline-variant': '#3E4947',
+        'dark-inverse-surface': '#E9E1DC',
+        'dark-inverse-on-surface': '#33302C',
+        'dark-inverse-primary': '#006A63',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '10px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '24px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '48px',
+        'page-margin': '24px',
+      },
+      fontFamily: {
+        'display': ['"Playfair"', 'sans-serif'],
+        'headline': ['"Playfair"', 'sans-serif'],
+        'title': ['"Poppins"', 'sans-serif'],
+        'body': ['"Poppins"', 'sans-serif'],
+        'label': ['"Poppins"', 'sans-serif'],
+        'mono': ['"Red Hat Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-lg': ['56px', { lineHeight: '64px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-lg-mobile': ['32px', { lineHeight: '38px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'display-md': ['44px', { lineHeight: '52px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'display-md-mobile': ['28px', { lineHeight: '34px', letterSpacing: '0px', fontWeight: '700' }],
+        'headline-lg': ['36px', { lineHeight: '44px', letterSpacing: '0px', fontWeight: '600' }],
+        'headline-lg-mobile': ['24px', { lineHeight: '30px', letterSpacing: '0px', fontWeight: '600' }],
+        'headline-md': ['26px', { lineHeight: '34px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-lg': ['20px', { lineHeight: '28px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '24px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'body-lg': ['18px', { lineHeight: '28px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['15px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.2px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.3px', fontWeight: '500' }],
+        'mono-lg': ['24px', { lineHeight: '30px', letterSpacing: '0px', fontWeight: '600' }],
+        'mono-md': ['14px', { lineHeight: '20px', letterSpacing: '0.2px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '300ms',
+        'convoy-glide': '450ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'convoy-glide': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'convoy-glide': 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair:wght@600;700&amp;family=Poppins:wght@400;500;600;700&amp;family=Red+Hat+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }
+  </style>
+</head>
+<body class="bg-light-surface text-light-on-surface font-body antialiased">
+  <div class="min-h-[1024px] w-full max-w-[1440px] mx-auto px-gutter-md lg:px-gutter-xl py-gutter-lg flex flex-col gap-gutter-lg bg-light-surface" data-stitch-vh="min-h-[1024px]===min-h-screen">
+    <!-- Top Moderator Bar -->
+    <header class="flex flex-wrap items-center justify-between gap-gutter-md pb-gutter-md border-b border-light-outline-variant">
+      <div class="flex flex-wrap items-center gap-gutter-md">
+        <span data-component-id="badge-crew" data-component-type="badge" data-component-variant="status" role="status" class="inline-flex items-center gap-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-crew-teal text-light-on-primary whitespace-nowrap">
+          <span class="material-symbols-outlined text-body-md" aria-hidden="true">explore</span>
+          <span class="font-label text-label-sm" data-design-text-token="label-sm">Moderator Console</span>
+        </span>
+        <span class="font-title text-title-md text-light-on-surface" data-design-text-token="title-md">
+          Stop 2A: Adilabad · The Forest Edge
+        </span>
+      </div>
+
+      <div class="flex items-center gap-gutter-md">
+        <!-- Players on board -->
+        <div class="flex items-center gap-gutter-sm px-gutter-md py-gutter-xs rounded-full bg-light-surface-container border border-light-outline-variant">
+          <span class="w-2.5 h-2.5 rounded-full bg-success-green" aria-hidden="true"></span>
+          <span class="font-label text-label-sm text-light-on-surface-variant" data-design-text-token="label-sm">Players on board</span>
+          <span class="font-mono text-mono-md text-light-on-surface tabular-nums" data-design-text-token="mono-md">142</span>
+        </div>
+
+        <button id="sound-btn" type="button" onclick="toggleSound()" data-component-id="button-icon" data-component-type="button" data-component-variant="icon" aria-label="Toggle sound" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-light-surface-container text-light-on-surface border border-light-outline-variant hover:bg-light-surface-container-high">
+          <span id="sound-icon" class="material-symbols-outlined text-title-md" aria-hidden="true">volume_up</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 12-Column Split Workspace -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-gutter-xl items-start">
+      <!-- Left 7 Cols: M1 Control Panel & Live Vote Counts -->
+      <section class="lg:col-span-7 flex flex-col gap-gutter-lg min-w-0">
+        <!-- Beat Stepper -->
+        <div class="p-gutter-md rounded-lg bg-light-surface-container-low border border-light-outline-variant flex flex-wrap items-center justify-between gap-gutter-sm">
+          <span class="font-label text-label-sm text-light-on-surface-variant px-gutter-sm py-gutter-xs" data-design-text-token="label-sm">1. Listen</span>
+          <span class="font-label text-label-sm text-light-on-surface-variant px-gutter-sm py-gutter-xs" data-design-text-token="label-sm">2. Think (15s)</span>
+          <span id="active-beat" class="font-label text-label-lg px-gutter-md py-gutter-xs rounded-full bg-meera-forest text-light-on-primary whitespace-nowrap" data-design-text-token="label-lg">3. Vote</span>
+          <span class="font-label text-label-sm text-light-on-surface-variant px-gutter-sm py-gutter-xs" data-design-text-token="label-sm">4. Reveal</span>
+          <span class="font-label text-label-sm text-light-on-surface-variant px-gutter-sm py-gutter-xs" data-design-text-token="label-sm">5. Handover</span>
+        </div>
+
+        <!-- Character Line & Question -->
+        <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="w-full p-gutter-lg rounded-lg bg-light-surface-container-lowest border border-light-outline-variant flex flex-col gap-gutter-md">
+          <header class="flex flex-wrap items-center justify-between gap-gutter-md">
+            <div class="flex items-center gap-gutter-sm">
+              <span class="inline-flex items-center gap-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-meera-forest text-light-on-primary font-label text-label-sm">
+                <span class="material-symbols-outlined text-body-md" aria-hidden="true">visibility</span>
+                <span data-design-text-token="label-sm">Meera</span>
+              </span>
+              <span class="font-mono text-mono-md text-light-outline tabular-nums" data-design-text-token="mono-md">Q2 · Discovery</span>
+            </div>
+            <div class="flex items-center gap-gutter-sm">
+              <span class="font-label text-label-sm text-light-on-surface-variant" data-design-text-token="label-sm">Vote timer</span>
+              <span class="font-mono text-mono-lg text-light-primary tabular-nums" data-design-text-token="mono-lg">00:18</span>
+            </div>
+          </header>
+
+          <p class="font-body text-body-md text-light-on-surface-variant italic text-pretty" data-design-text-token="body-md">
+            &#34;I have 4,000 camera-trap photos and ten years of notes on cattle lost to tigers. I want to know where the next attack is likely, before it happens.&#34;
+          </p>
+
+          <h1 class="font-headline text-headline-lg-mobile text-light-on-surface text-balance" data-design-text-token="headline-lg-mobile">
+            AI says the next attacks will be in three villages. What do you do?
+          </h1>
+        </article>
+
+        <!-- Live Vote Tallies + M3 Fallback Host Mode -->
+        <article data-component-id="card-action" data-component-type="card" data-component-variant="action" class="w-full p-gutter-lg rounded-lg bg-light-surface-container-lowest border border-light-outline-variant flex flex-col gap-gutter-md">
+          <header class="flex flex-wrap items-center justify-between gap-gutter-md">
+            <div class="min-w-0">
+              <h2 class="font-title text-title-lg text-light-on-surface" data-design-text-token="title-lg">Live votes (118 / 142)</h2>
+              <p id="mode-subtitle" class="font-body text-body-md text-light-on-surface-variant" data-design-text-token="body-md">Turnout 83% — healthy signal</p>
+            </div>
+            <button id="host-mode-btn" type="button" onclick="toggleHostMode()" data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" class="px-gutter-lg py-gutter-md rounded-md bg-light-surface-container-low text-light-on-surface border border-light-outline-variant font-label text-label-lg hover:bg-light-surface-container-high whitespace-nowrap">
+              <span id="host-mode-label" data-design-text-token="label-lg">Host mode</span>
+            </button>
+          </header>
+
+          <div class="flex flex-col gap-gutter-sm">
+            <div class="flex items-center justify-between gap-gutter-md p-gutter-sm rounded-md bg-light-surface-container-low">
+              <span class="font-body text-body-md text-light-on-surface min-w-0" data-design-text-token="body-md">Act on it now</span>
+              <span class="font-mono text-mono-md text-light-on-surface-variant tabular-nums shrink-0" data-design-text-token="mono-md">21 (18%)</span>
+            </div>
+            <div class="flex items-center justify-between gap-gutter-md p-gutter-sm rounded-md bg-light-surface-container-lowest border-2 border-meera-forest">
+              <span class="font-title text-title-md text-light-on-surface min-w-0" data-design-text-token="title-md">Check it against Meera&#39;s field knowledge</span>
+              <span class="font-mono text-mono-md text-meera-forest tabular-nums shrink-0" data-design-text-token="mono-md">64 (54%)</span>
+            </div>
+            <div class="flex items-center justify-between gap-gutter-md p-gutter-sm rounded-md bg-light-surface-container-low">
+              <span class="font-body text-body-md text-light-on-surface min-w-0" data-design-text-token="body-md">Send it straight to the villagers</span>
+              <span class="font-mono text-mono-md text-light-on-surface-variant tabular-nums shrink-0" data-design-text-token="mono-md">25 (21%)</span>
+            </div>
+            <div class="flex items-center justify-between gap-gutter-md p-gutter-sm rounded-md bg-light-surface-container-low">
+              <span class="font-body text-body-md text-light-on-surface min-w-0" data-design-text-token="body-md">Ignore it; AI can&#39;t know a forest</span>
+              <span class="font-mono text-mono-md text-light-on-surface-variant tabular-nums shrink-0" data-design-text-token="mono-md">8 (7%)</span>
+            </div>
+          </div>
+
+          <!-- Primary Action Row -->
+          <footer class="pt-gutter-sm flex items-center justify-between gap-gutter-md border-t border-light-outline-variant">
+            <button type="button" onclick="stepBack()" data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" class="px-gutter-lg py-gutter-md rounded-md bg-light-surface-container-low text-light-on-surface border border-light-outline-variant font-label text-label-lg hover:bg-light-surface-container-high whitespace-nowrap">
+              <span data-design-text-token="label-lg">Back</span>
+            </button>
+
+            <button id="main-action-btn" type="button" onclick="advanceBeat()" data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" class="flex-1 inline-flex items-center justify-center gap-gutter-sm px-gutter-xl py-gutter-md rounded-md bg-light-primary text-light-on-primary font-label text-label-lg hover:bg-light-primary-container whitespace-nowrap">
+              <span class="material-symbols-outlined text-title-lg" aria-hidden="true">lock</span>
+              <span id="main-action-label" data-design-text-token="label-lg">Lock votes</span>
+            </button>
+          </footer>
+        </article>
+      </section>
+
+      <!-- Right 5 Cols: M2 Moderator Notes + M4 Placeholders Checklist -->
+      <aside class="lg:col-span-5 flex flex-col gap-gutter-lg min-w-0">
+        <!-- M2: Moderator Notes -->
+        <article data-component-id="card-notes" data-component-type="card" data-component-variant="elevated" class="w-full p-gutter-lg rounded-lg bg-light-surface-container-low border border-light-outline-variant flex flex-col gap-gutter-md">
+          <header class="flex items-center justify-between gap-gutter-sm">
+            <h2 class="font-title text-title-lg text-light-on-surface" data-design-text-token="title-lg">Moderator notes · Q2</h2>
+            <span class="material-symbols-outlined text-meera-forest" aria-hidden="true">menu_book</span>
+          </header>
+          <p class="font-body text-body-md text-light-on-surface text-pretty" data-design-text-token="body-md">
+            AI finds patterns only in the data it&#39;s given; gaps and bias become confident answers, and AI can invent things; people who know the ground check it.
+          </p>
+          <div class="p-gutter-md rounded-md bg-light-surface-container-lowest border border-light-outline-variant flex flex-col gap-gutter-xs">
+            <span class="font-label text-label-sm text-meera-forest uppercase" data-design-text-token="label-sm">Upcoming reveal twist</span>
+            <span class="font-body text-body-md text-light-on-surface-variant" data-design-text-token="body-md">
+              &#34;The three villages are the only ones with mobile signal. That&#39;s where the reports came from.&#34;
+            </span>
+          </div>
+        </article>
+
+        <!-- M4: Placeholders Checklist (flagged in accessible amber) -->
+        <article data-component-id="card-checklist" data-component-type="card" data-component-variant="elevated" class="w-full p-gutter-lg rounded-lg bg-light-surface-container-lowest border border-warning-amber flex flex-col gap-gutter-md">
+          <header class="flex items-center justify-between gap-gutter-sm">
+            <h2 class="font-title text-title-lg text-light-on-surface" data-design-text-token="title-lg">Placeholders to fill</h2>
+            <span data-component-id="badge-warning" data-component-type="badge" data-component-variant="warning" role="status" class="inline-flex items-center gap-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-light-secondary-container text-light-on-secondary-container whitespace-nowrap">
+              <span class="material-symbols-outlined text-body-md" aria-hidden="true">pending</span>
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">3 items</span>
+            </span>
+          </header>
+
+          <ul class="flex flex-col gap-gutter-sm">
+            <li class="flex items-center justify-between gap-gutter-sm p-gutter-sm rounded-md bg-light-surface-container-low">
+              <span class="font-body text-body-md text-light-on-surface min-w-0" data-design-text-token="body-md">Tech4Good facts (founded, members)</span>
+              <span class="font-label text-label-sm text-light-secondary shrink-0" data-design-text-token="label-sm">Screen 4</span>
+            </li>
+            <li class="flex items-center justify-between gap-gutter-sm p-gutter-sm rounded-md bg-light-surface-container-low">
+              <span class="font-body text-body-md text-light-on-surface min-w-0" data-design-text-token="body-md">Hakki &amp; Holématthi backstories</span>
+              <span class="font-label text-label-sm text-light-secondary shrink-0" data-design-text-token="label-sm">Screen 6</span>
+            </li>
+            <li class="flex items-center justify-between gap-gutter-sm p-gutter-sm rounded-md bg-light-surface-container-low">
+              <span class="font-body text-body-md text-light-on-surface min-w-0" data-design-text-token="body-md">Insight Out QR code &amp; link</span>
+              <span class="font-label text-label-sm text-light-secondary shrink-0" data-design-text-token="label-sm">Screen 11f</span>
+            </li>
+          </ul>
+        </article>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const beats = [
+      { label: '3. Vote', action: 'Lock votes' },
+      { label: '4. Reveal', action: 'Reveal twist' },
+      { label: '5. Handover', action: 'Meera joins' },
+      { label: 'Next stop', action: 'Ride to Village Square' }
+    ];
+    let beatIdx = 0;
+    let hostMode = false;
+    let soundOn = true;
+
+    function advanceBeat() {
+      beatIdx = (beatIdx + 1) % beats.length;
+      document.getElementById('active-beat').textContent = beats[beatIdx].label;
+      document.getElementById('main-action-label').textContent = beats[beatIdx].action;
+    }
+
+    function stepBack() {
+      beatIdx = (beatIdx - 1 + beats.length) % beats.length;
+      document.getElementById('active-beat').textContent = beats[beatIdx].label;
+      document.getElementById('main-action-label').textContent = beats[beatIdx].action;
+    }
+
+    function toggleHostMode() {
+      hostMode = !hostMode;
+      document.getElementById('host-mode-label').textContent = hostMode ? 'Live mode' : 'Host mode';
+      document.getElementById('mode-subtitle').textContent = hostMode
+        ? 'Host fallback active — enter room results manually'
+        : 'Turnout 83% — healthy signal';
+    }
+
+    function toggleSound() {
+      soundOn = !soundOn;
+      document.getElementById('sound-icon').textContent = soundOn ? 'volume_up' : 'volume_off';
+    }
+  </script>
+
+
+</body></html>

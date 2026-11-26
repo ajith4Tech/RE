@@ -10,38 +10,21 @@
 </head>
 <body class="presenter">
   <div id="viewport">
-    <div id="stage" class="band-tall">
-      <!-- What's on screen: where we are (top left), the game strip (top right), the scene, the road band.
-           Presenter controls live in the moderator view (/moderator) and on the keyboard, never here. -->
-      <header id="hud">
-        <div class="where" id="hudWhere"></div>
-        <div class="strip" id="strip">
-          <div class="pill-stat hidden" id="qnum"></div>
-          <div class="gauge" id="fuel" role="img" aria-label="Fuel 50%">
-            <svg viewBox="0 0 64 38" aria-hidden="true"><path class="g-track" d="M7 33 A25 25 0 0 1 57 33" /><path class="g-fill" id="gFill" pathLength="100" d="M7 33 A25 25 0 0 1 57 33" /></svg>
-            <span class="g-read">Fuel <b id="fuelPct">50%</b></span>
-          </div>
-          <div class="pill-stat hidden" id="players"><b id="playersN">0</b> <span>riders joined</span></div>
-          <div class="pill-stat hidden" id="answers"><b id="ansCount">0</b> <span>answers</span></div>
-          <div class="host-badge hidden" id="modeBadge">Host mode</div>
-          <div class="fuel-note" id="fuelDelta" aria-live="polite"></div>
-        </div>
-      </header>
-
-      <main id="scene"></main>
-
-      <div id="bandWrap"><svg id="band" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg></div>
-      <!-- The bike rides in its own unclipped layer above the band, so the rider is never cut off -->
-      <svg id="bikeLayerSvg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
-
-      <div id="qrCard" class="qr-card hidden">
-        <div class="qr" id="qrSmall"></div>
-        <div><b>Scan to vote</b><span id="qrUrl"></span></div>
-      </div>
-
-      <div id="toast" class="toast" role="status"></div>
+    <!-- A fixed 16:9 stage on the Stitch 1440×810 grid, scaled to the window (1920×1080 on a 1080p projector).
+         The presenter runs everything from here: the dock (mouse) or the keyboard / a clicker. -->
+    <div id="stage" data-p="crew">
+      <div id="backdrop" aria-hidden="true"></div>
+      <header id="hud"></header>
+      <main id="main"></main>
+      <section id="road" aria-hidden="true">
+        <div id="lane"><div id="convoy"></div><div id="sign"></div></div>
+        <div id="strip"><i></i></div>
+        <footer id="foot"><div id="route"></div><div id="fuel"></div></footer>
+      </section>
       <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-box" id="modalBox"></div></div>
     </div>
+    <!-- The presenter's dock: appears on mouse move, hides itself (and the cursor) after a few seconds -->
+    <div id="dock" aria-label="Presenter controls"></div>
   </div>
   <script src="vendor/qrcode.js"></script>
   <script type="module" src="js/presenter.js"></script>

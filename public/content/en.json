@@ -1,128 +1,203 @@
 {
   "title": "The Ride",
-  "subtitle": "Bengaluru to Travancore Palace",
-
   "config": {
     "publicUrl": "",
     "voteSeconds": 30,
-    "cloudVoteSeconds": 60,
-    "timerSeconds": 60,
+    "thinkSeconds": 15,
+    "extendSeconds": 15,
+    "rideMs": 3000,
     "fuelStart": 50,
-    "fuelPerQuestion": 10,
+    "fuelPerVote": 10,
     "fuelPerPump": 20,
     "lowTurnout": 0.3,
-    "lowTurnoutAfterSeconds": 10
+    "backdrops": {
+      "prologue": "img/scenes/prologue",
+      "workbench": "img/scenes/workbench",
+      "forest": "img/scenes/forest",
+      "village": "img/scenes/village",
+      "pump": "img/scenes/pump",
+      "records": "img/scenes/records",
+      "bridge": "img/scenes/bridge",
+      "palace": "img/scenes/palace",
+      "road-1": "img/scenes/road-1",
+      "road-2": "img/scenes/road-2",
+      "road-3": "img/scenes/road-3",
+      "road-4": "img/scenes/road-4"
+    }
   },
-
   "ui": {
-    "stopN": "Stop {n} of {total}",
-    "questionN": "Question {n} of {total}",
-    "arrival": "Arrival",
-    "refuel": "Refuel stop",
-    "beforeWeRide": "Before we ride",
-    "onTheRoad": "On the road to {place}",
-    "fuel": "Fuel",
-    "riders": "riders joined",
-    "answers": "answers",
+    "playersOnBoard": "Players on board",
     "hostMode": "Host mode",
+    "thinkLabel": "Think it over",
     "votesLocked": "Votes locked",
-    "leading": "Leading",
-    "roomsPick": "Room's pick",
-    "roomsTop": "Room's top {n}",
-    "fuelUp": "Fuel +{n}%",
-    "roomFuelled": "The room fuelled the ride",
-    "scanToVote": "Scan to vote",
-    "orType": "Or type",
+    "fuel": "Fuel",
     "builtBy": "Built by",
     "took": "Took",
     "cost": "Cost",
-    "cloudEmpty": "Answers appear here as they come in.",
-    "hostHintChoose": "Show of hands: which one?",
-    "hostHintPick": "Show of hands for each. The room picks {n}.",
-    "hostHintCloud": "Call out your answers.",
-
-    "connecting": "Connecting…",
-    "connected": "Connected",
-    "reconnecting": "Reconnecting…",
-    "loadError": "We can't reach the ride right now. Check your Wi-Fi or mobile data, then reload this page.",
-    "anonymous": "Anonymous voting. No names, no sign-up, no personal data.",
-    "watch": "Watch the big screen.",
-    "nextUp": "The next question is on its way.",
-    "tapAnswer": "Tap your answer. One answer per phone.",
-    "send": "Send my answer",
-    "sendPicks": "Send my picks",
-    "sendWords": "Send my answers",
-    "sending": "Sending…",
-    "sendFailed": "That didn't go through. Check your connection and try again.",
-    "youreIn": "Your answer is in.",
-    "youPicked": "You picked",
-    "roomSoFar": "The room so far",
-    "lockedNote": "Votes are locked. Watch the big screen.",
-    "missedVote": "Voting closed before your answer arrived.",
-    "pickHelp": "Pick {n}.",
-    "picked": "{k} of {n} picked",
-    "wordHelp": "Up to 40 characters.",
-    "charsLeft": "{n} characters left",
-    "wordSent": "Sent. The moderator adds it to the cloud.",
-    "wordAnother": "Add another",
-    "wordLimit": "That's three answers from this phone. Thank you.",
-    "wordRejected": "Try different words for that one.",
-    "dualHelp": "Up to 40 characters each. You can leave one blank.",
-    "dualSent": "Sent. The moderator adds your answers to the screen.",
-    "openSite": "Open the site",
-    "openLink": "Open the link",
-    "skip": "Skip to the question"
+    "roomGuessed": "The room guessed",
+    "onTheRoad": "On the road",
+    "phone": {
+      "connecting": "Connecting…",
+      "reconnecting": "Reconnecting…",
+      "connected": "On board",
+      "loadError": "We can't reach the ride right now. Check your Wi-Fi or mobile data, then reload this page.",
+      "anonymous": "Anonymous. No names, no sign-up.",
+      "lookUp": "Look up.",
+      "lookAtScreen": "Look at the screen.",
+      "listenTo": "Listen to {name}.",
+      "think": "Think it over. Options coming.",
+      "pickHelp": "Pick {n}.",
+      "picked": "{k} of {n} picked",
+      "sendPicks": "Send my three",
+      "sending": "Sending…",
+      "sendFailed": "That didn't go through. Check your connection and tap again.",
+      "youreIn": "Your answer is in. Look up to see the room.",
+      "locked": "Votes locked. Look up.",
+      "missedVote": "Voting closed before your answer arrived.",
+      "reveal": "What do you think? Talk to the person next to you.",
+      "joins": "{name} joins the ride.",
+      "riding": "On the road to {place}.",
+      "openLink": "Open the link",
+      "brand": "The Ride · Tech4Good",
+      "progress": "{km} / {total} km",
+      "yourPick": "Your pick: {answer}"
+    },
+    "chapter": "Chapter {n} of {total} · {name}",
+    "towards": "On the road to {place} · {km}",
+    "brand": "Tech4Good",
+    "onBoard": "On board",
+    "votingOpen": "Voting open",
+    "voted": "{n} / {total} voted",
+    "questionOf": "Question {n} of {total}",
+    "fullConvoy": "Full convoy arrived",
+    "prologue": "Prologue · {from} → {to} · {km}",
+    "showOfHands": "Show of hands"
   },
-
   "lobby": {
     "title": "Join the ride",
-    "line": "Scan the code to hop on. You'll vote from your phone.",
-    "counter": "riders on board",
-    "button": "Start the ride",
-    "phoneJoined": "You're on board. Watch the big screen.",
-    "hostTitle": "The Ride",
-    "hostLine": "Vote with a show of hands at every stop."
+    "line": "Scan to hop on. You'll vote from your phone.",
+    "button": "Begin",
+    "phone": "You're on board. Look up.",
+    "hostLine": "Answer with a show of hands at every stop."
   },
-
-  "intro": {
-    "id": "intro",
-    "type": "intro",
+  "coldOpen": {
+    "lines": [
+      "At the edge of a forest, a researcher has ten years of data and one urgent question.",
+      "In a village square, a community worker has 300 families to reach before dark.",
+      "In a room full of files, a data lead guards records that could save lives, or expose them.",
+      "By a broken bridge, a tech worker is stuck with a tool nobody can fix.",
+      "Four people. One road. 2,100 km. Your choices decide how they get there."
+    ],
+    "title": "THE RIDE",
+    "from": "Bengaluru",
+    "to": "Travancore Palace",
+    "note": "Let each line land in silence before the next. About 45 seconds in all. The engine idles underneath; mute it from Sound if the room is loud."
+  },
+  "crew": {
+    "label": "Leading the ride",
     "title": "Tech4Good Community",
-    "line": "We help social-impact organisations use technology with care, and build it themselves.",
-    "mission": "Embrace AI with care. Build it yourself.",
+    "line": "A community of builders who help social-impact organisations use technology with care, and build it themselves.",
     "facts": [
       "PLACEHOLDER: first fact about Tech4Good Community",
       "PLACEHOLDER: second fact about Tech4Good Community",
       "PLACEHOLDER: third fact about Tech4Good Community"
     ],
-    "button": "Start the ride",
-    "note": "Welcome the room. Say who Tech4Good is in one breath, then start the ride."
+    "closing": "But we can't make this ride alone. We'll need you, and the people we meet on the road.",
+    "note": "About 60 seconds. Say who Tech4Good is in one breath, then the three facts, then the closing line."
   },
-
+  "ignition": {
+    "prompt": "Ready to ride?",
+    "phone": "We're off. Listen to the story.",
+    "note": "Ask the room if they're ready, then fire it up."
+  },
+  "places": [
+    {
+      "id": "bengaluru",
+      "name": "Bengaluru",
+      "km": 0,
+      "region": "bengaluru"
+    },
+    {
+      "id": "adilabad",
+      "name": "Adilabad",
+      "km": 870,
+      "region": "adilabad"
+    },
+    {
+      "id": "nagpur",
+      "name": "Nagpur",
+      "km": 1050,
+      "region": "nagpur"
+    },
+    {
+      "id": "jhansi",
+      "name": "Jhansi",
+      "km": 1650,
+      "region": "jhansi"
+    },
+    {
+      "id": "palace",
+      "name": "Travancore Palace",
+      "km": 2100,
+      "region": "delhi"
+    }
+  ],
   "personas": {
-    "meera": { "name": "Meera", "role": "Field researcher", "badge": "binoculars" },
-    "lakshmi": { "name": "Lakshmi", "role": "Community coordinator", "badge": "hands" },
-    "asha": { "name": "Asha", "role": "Data steward", "badge": "padlock" },
-    "imran": { "name": "Imran", "role": "Tech maintainer", "badge": "wrench" },
-    "you": { "name": "You", "role": "Everyone in this room", "badge": "milestones" }
+    "crew": {
+      "name": "The Tech4Good crew",
+      "short": "the crew",
+      "role": "Tech4Good Community",
+      "badge": "compass",
+      "color": "#0F766E",
+      "bright": "#2DD4BF",
+      "on": "#FFFFFF"
+    },
+    "meera": {
+      "name": "Meera",
+      "role": "Field researcher",
+      "badge": "binoculars",
+      "color": "#15803D",
+      "bright": "#4ADE80",
+      "on": "#FFFFFF"
+    },
+    "lakshmi": {
+      "name": "Lakshmi",
+      "role": "Community worker",
+      "badge": "hands",
+      "color": "#D97706",
+      "bright": "#FBBF24",
+      "on": "#161310"
+    },
+    "arif": {
+      "name": "Arif",
+      "role": "Data lead",
+      "badge": "padlock",
+      "color": "#4338CA",
+      "bright": "#818CF8",
+      "on": "#FFFFFF"
+    },
+    "ravi": {
+      "name": "Ravi",
+      "role": "The cooperative's one-person tech team",
+      "badge": "wrench",
+      "color": "#C2410C",
+      "bright": "#FB923C",
+      "on": "#FFFFFF"
+    }
   },
-
   "stops": [
     {
       "id": "bengaluru",
-      "place": "Bengaluru",
-      "milestone": "Bengaluru",
-      "km": 0,
-      "theme": "Where it starts",
-      "landscape": "deccan",
+      "place": "bengaluru",
+      "spot": "Tech4Good workbench",
+      "scene": "workbench",
+      "theme": "Possibility",
+      "persona": "crew",
+      "voice": "Before we set off, someone shared two websites with us. They made us stop and look twice.",
       "steps": [
         {
-          "id": "q1",
-          "type": "showcase",
-          "format": "choose",
-          "line": "Two websites. One question: who built them?",
-          "phoneLine": "Look at the screen. Who do you think built these?",
-          "phoneReveal": "Look up. The answer's on screen.",
+          "id": "look",
+          "type": "look",
           "sites": [
             {
               "id": "hakki",
@@ -131,7 +206,11 @@
               "image": "img/showcase-hakki.png",
               "builtBy": "PLACEHOLDER: who built Hakki",
               "took": "PLACEHOLDER: how long Hakki took",
-              "cost": "PLACEHOLDER: what Hakki cost"
+              "cost": "PLACEHOLDER: what Hakki cost",
+              "embed": false,
+              "caption": "Photos → website",
+              "icon": "photo_camera",
+              "tone": "crew"
             },
             {
               "id": "holematthi",
@@ -140,242 +219,402 @@
               "image": "img/showcase-holematthi.png",
               "builtBy": "PLACEHOLDER: who built the Holématthi site",
               "took": "PLACEHOLDER: how long the Holématthi site took",
-              "cost": "PLACEHOLDER: what the Holématthi site cost"
+              "cost": "PLACEHOLDER: what the Holématthi site cost",
+              "embed": true,
+              "caption": "Book → digital",
+              "icon": "menu_book",
+              "tone": "meera"
             }
           ],
-          "question": "Anyone can build now. So what should decide what gets built?",
+          "note": "Open either site live from here if the room wants a closer look. Then ask who built them."
+        },
+        {
+          "id": "guess",
+          "type": "guess",
+          "question": "Who do you think built these?",
           "options": [
-            { "id": "A", "text": "The problem we're solving" },
-            { "id": "B", "text": "The people who'll use it" },
-            { "id": "C", "text": "What we can afford to maintain" },
-            { "id": "D", "text": "What funders will support" }
+            {
+              "id": "A",
+              "text": "A web agency"
+            },
+            {
+              "id": "B",
+              "text": "An experienced developer"
+            },
+            {
+              "id": "C",
+              "text": "A small tech team"
+            },
+            {
+              "id": "D",
+              "text": "Someone with no coding background, using AI"
+            }
           ],
-          "reveal": "Neither had a development team behind it. Building is no longer the hard part. Choosing what to build is.",
-          "note": "Is code still the hard part? If we can build anything, how do we choose?"
+          "note": "A quick guess, not a question. Show the room's guesses and don't reveal yet."
+        },
+        {
+          "id": "q1",
+          "type": "question",
+          "format": "choose",
+          "question": "If anyone can build something like this, what becomes the hardest part?",
+          "options": [
+            {
+              "id": "A",
+              "text": "Knowing what to build"
+            },
+            {
+              "id": "B",
+              "text": "Understanding who'll use it"
+            },
+            {
+              "id": "C",
+              "text": "Keeping it running"
+            },
+            {
+              "id": "D",
+              "text": "Paying for it"
+            }
+          ],
+          "revealSites": true,
+          "revealNote": "Neither had a development team. The hard part has moved from writing code to choosing the right problem.",
+          "core": "AI has collapsed the time and cost of building; non-developers ship real things. The bottleneck is now choosing the right problem."
         }
-      ]
+      ],
+      "handover": "If the hard part is the problem, we should go where the problems are.",
+      "chapter": "The workbench"
     },
     {
-      "id": "anantapur",
-      "place": "Anantapur",
-      "milestone": "Anantapur",
-      "km": 280,
-      "theme": "In the field",
-      "landscape": "deccan",
+      "id": "adilabadA",
+      "place": "adilabad",
+      "spot": "Forest edge",
+      "scene": "forest",
+      "theme": "Discovery",
       "persona": "meera",
-      "voice": "Ten years of field notes. AI can read them before lunch.",
-      "signs": ["Anantapur 280 km", "Data ahead. Bring context."],
+      "sign": "Adilabad 870 km",
+      "voice": "I have 4,000 camera-trap photos and ten years of notes on cattle lost to tigers. I want to know where the next attack is likely, before it happens.",
       "steps": [
         {
           "id": "q2",
           "type": "question",
-          "format": "dualcloud",
-          "persona": "meera",
-          "question": "What would you let AI find, and what should it never decide?",
-          "maxLength": 40,
-          "parts": [
-            { "id": "find", "title": "Let AI find…", "color": "green" },
-            { "id": "never", "title": "Never let AI decide…", "color": "red" }
+          "format": "choose",
+          "question": "AI says the next attacks will be in three villages. What do you do?",
+          "options": [
+            {
+              "id": "A",
+              "text": "Act on it now"
+            },
+            {
+              "id": "B",
+              "text": "Check it against Meera's field knowledge"
+            },
+            {
+              "id": "C",
+              "text": "Send it straight to the villagers"
+            },
+            {
+              "id": "D",
+              "text": "Ignore it; AI can't know a forest"
+            }
           ],
-          "note": "Patterns, trends, gaps vs. decisions about people, land, livelihoods."
-        },
-        {
-          "id": "r2",
-          "type": "reveal",
-          "persona": "meera",
-          "text": "The AI spots a pattern. Meera has walked these hills for a decade, and she says it's wrong.",
-          "takeaway": "The pattern is a lead. The people who know the place test it.",
-          "note": "Who in your organisation would test a pattern like this?"
-        },
-        {
-          "id": "lakshmi",
-          "type": "persona",
-          "persona": "lakshmi",
-          "line": "You can build us an app by Monday. Half our village doesn't have a smartphone.",
-          "note": "Let the line land before the question."
-        },
+          "revealNote": "The three villages are the only ones with mobile signal. That's where the reports came from.",
+          "core": "AI finds patterns only in the data it's given. Gaps and bias become confident answers, and AI can invent things outright. A prediction isn't a decision: people who know the ground check it."
+        }
+      ],
+      "handover": "Even if the warning is right, it's useless if it doesn't reach people. Lakshmi knows how.",
+      "chapter": "The forest edge"
+    },
+    {
+      "id": "adilabadB",
+      "place": "adilabad",
+      "spot": "Village square",
+      "scene": "village",
+      "theme": "People",
+      "persona": "lakshmi",
+      "sameCity": true,
+      "voice": "When a warning comes, I have to reach 300 families. Half have basic phones, many can't read, and the signal drops after dark.",
+      "steps": [
         {
           "id": "q3",
           "type": "question",
           "format": "choose",
-          "persona": "lakshmi",
-          "question": "It's built in two days, but most people can't use it. What changes first?",
+          "question": "What's the best way to get the warning to them?",
           "options": [
-            { "id": "A", "text": "The technology" },
-            { "id": "B", "text": "How people reach it" },
-            { "id": "C", "text": "The idea itself" },
-            { "id": "D", "text": "Who builds it" }
+            {
+              "id": "A",
+              "text": "An app with alerts"
+            },
+            {
+              "id": "B",
+              "text": "An SMS in the local language"
+            },
+            {
+              "id": "C",
+              "text": "A voice call in the local language"
+            },
+            {
+              "id": "D",
+              "text": "Lakshmi and volunteers, with AI drafting the messages"
+            }
           ],
-          "note": "Voice, WhatsApp, a person to help. Should every problem get an app?"
-        },
+          "revealNote": "There's no single answer, but the app is the one that fails here.",
+          "core": "Accessibility means language, literacy, devices and connectivity, not just disability. Shape technology around people. AI can support the humans who reach them."
+        }
+      ],
+      "handover": "To reach families, I keep names, phone numbers and addresses. Arif deals with that every day.",
+      "chapter": "The village square"
+    },
+    {
+      "id": "pump",
+      "type": "pump",
+      "spot": "Refuel stop",
+      "scene": "pump",
+      "sign": "Refuel stop",
+      "skippable": true,
+      "steps": [
         {
-          "id": "r3",
-          "type": "reveal",
-          "persona": "lakshmi",
-          "text": "What if the community helped build it?",
-          "takeaway": "The best tools fit people's lives, not the other way round.",
-          "note": "Ask for one example where a community shaped a tool."
-        },
-        {
-          "id": "pump1",
+          "id": "pump",
           "type": "pump",
-          "board": "Refuel stop",
           "question": "Does your team use AI today?",
           "options": [
-            { "id": "daily", "text": "Every day" },
-            { "id": "sometimes", "text": "Now and then" },
-            { "id": "notyet", "text": "Not yet" }
+            {
+              "id": "A",
+              "text": "Every day"
+            },
+            {
+              "id": "B",
+              "text": "Now and then"
+            },
+            {
+              "id": "C",
+              "text": "Not yet"
+            }
           ],
           "resultLine": "This room, right now.",
-          "note": "A quick pulse, not a question. Every answer adds fuel."
+          "note": "A quick pulse, not a question. Every answer adds fuel. Skip it if time is short."
         }
       ]
     },
     {
       "id": "nagpur",
-      "place": "Nagpur",
-      "milestone": "Nagpur · Zero Mile, the centre of India",
-      "km": 1050,
-      "theme": "The trust checkpost",
-      "landscape": "orange",
-      "persona": "asha",
-      "voice": "AI could find what we're missing. But this data is about real people.",
-      "signs": ["Zero Mile ahead", "Caution: real people's data"],
+      "place": "nagpur",
+      "spot": "Records room",
+      "scene": "records",
+      "theme": "Trust",
+      "persona": "arif",
+      "sign": "Nagpur 1,050 km",
+      "voice": "We have records for 40 clinics. AI could spot which mothers are at risk before it's too late. But every record has a name, a phone number and a diagnosis.",
       "steps": [
         {
           "id": "q4",
           "type": "question",
           "format": "choose",
-          "persona": "asha",
-          "question": "AI needs your data to find insights. How much should it see?",
+          "question": "What should AI be allowed to see to spot the risk?",
           "options": [
-            { "id": "A", "text": "Everything, detail matters" },
-            { "id": "B", "text": "Only what the question needs" },
-            { "id": "C", "text": "Only anonymised totals" },
-            { "id": "D", "text": "Nothing, yet" }
+            {
+              "id": "A",
+              "text": "Full records"
+            },
+            {
+              "id": "B",
+              "text": "Records with names and phones removed"
+            },
+            {
+              "id": "C",
+              "text": "Records with identities swapped for tokens"
+            },
+            {
+              "id": "D",
+              "text": "Only clinic-level totals"
+            }
           ],
-          "note": "What leaves the organisation? What never should?"
+          "core": "Share only what the question needs. Removing names isn't enough: age + village + diagnosis can identify someone. Tokens keep analysis useful while identities stay home."
         },
         {
           "id": "tokens",
-          "type": "infocard",
-          "persona": "asha",
+          "type": "card",
           "title": "Swap names for tokens",
           "rows": [
-            { "from": "Lakshmi", "to": "PERSON_001" },
-            { "from": "Bengaluru", "to": "LOCATION_001" },
-            { "from": "ID 1023", "to": "BENEFICIARY_001" }
+            {
+              "from": "Lakshmi",
+              "to": "PERSON_001"
+            },
+            {
+              "from": "Adilabad",
+              "to": "LOCATION_001"
+            },
+            {
+              "from": "ID 1023",
+              "to": "PATIENT_001"
+            }
           ],
-          "text": "AI works with the tokens. The key that links them back never leaves your hands. It lowers the risk, it doesn't erase it. Guard the key, and share only what the question needs.",
+          "text": "AI works with the tokens. The key that links them back stays with you. It lowers the risk, it doesn't erase it.",
+          "button": "Swap names for tokens",
           "note": "Tokenised is not the same as anonymous. Whoever holds the key can link it back."
         },
         {
           "id": "q5",
           "type": "question",
           "format": "choose",
-          "persona": "asha",
-          "question": "Powerful cloud AI with safeguards, or a smaller AI on your own machines?",
+          "question": "Where should the AI run?",
           "options": [
-            { "id": "A", "text": "Cloud, with safeguards" },
-            { "id": "B", "text": "Our own machines" },
-            { "id": "C", "text": "Depends on the data" },
-            { "id": "D", "text": "Not ready for either" }
+            {
+              "id": "A",
+              "text": "Cloud AI, under a data agreement"
+            },
+            {
+              "id": "B",
+              "text": "On our own server"
+            },
+            {
+              "id": "C",
+              "text": "Depends on the data"
+            },
+            {
+              "id": "D",
+              "text": "Not ready for either"
+            }
           ],
-          "note": "Control vs. capability. Hardware, cost, upkeep, readiness. Running AI locally isn't automatically safe."
+          "revealNote": "Local AI keeps data in-house but needs hardware, skills and upkeep. Cloud AI is more capable, so read the terms.",
+          "core": "Open-source models can run on your own machines. Local isn't automatically safe: access, logs and backups still matter."
         },
         {
           "id": "insight",
-          "type": "infocard",
-          "persona": "asha",
+          "type": "card",
           "title": "Insight Out by Tech4Good",
           "text": "Questions like these are what Insight Out explores: making AI useful for social-impact work while taking data, privacy and infrastructure seriously.",
-          "link": { "url": "PLACEHOLDER: Insight Out link", "label": "Find out about Insight Out" },
-          "qr": true,
+          "link": "PLACEHOLDER: Insight Out link",
+          "button": "Show Insight Out",
           "note": "Point people to Insight Out if they want to take these questions further."
-        },
-        {
-          "id": "pump2",
-          "type": "pump",
-          "board": "Refuel stop",
-          "question": "Does your organisation have rules for using AI?",
-          "options": [
-            { "id": "yes", "text": "Yes" },
-            { "id": "working", "text": "Working on it" },
-            { "id": "notyet", "text": "Not yet" }
-          ],
-          "resultLine": "This room, right now.",
-          "note": "A quick pulse, not a question. Every answer adds fuel."
         }
-      ]
+      ],
+      "handover": "Whatever we set up, someone has to keep it running. Ravi knows what happens when nobody does.",
+      "chapter": "The records room"
     },
     {
       "id": "jhansi",
-      "place": "Jhansi",
-      "milestone": "Jhansi",
-      "km": 1650,
-      "theme": "The broken bridge",
-      "landscape": "bundelkhand",
-      "persona": "imran",
-      "voice": "It ran beautifully for six months. Then the person who built it moved on.",
-      "signs": ["Bridge ahead", "Who maintains this road?"],
+      "place": "jhansi",
+      "spot": "The broken bridge",
+      "scene": "bridge",
+      "theme": "Sustainability",
+      "persona": "ravi",
+      "sign": "Jhansi 1,650 km",
+      "voice": "Two years ago, a college team built us an app for crop prices. They graduated. Now it's broken, nobody has the password, and farmers still call me about it.",
       "steps": [
         {
           "id": "q6",
           "type": "question",
           "format": "pickn",
-          "persona": "imran",
           "n": 3,
-          "question": "Before real people rely on it, what must be sorted? Pick three.",
-          "items": [
-            { "id": "owner", "text": "Who owns it" },
-            { "id": "fixer", "text": "Who fixes it when it breaks" },
-            { "id": "data", "text": "Where the data lives" },
-            { "id": "cost", "text": "What it costs to run" },
-            { "id": "exists", "text": "Whether a tool already does this" },
-            { "id": "design", "text": "A better design" },
-            { "id": "features", "text": "More features" },
-            { "id": "launch", "text": "An earlier launch" }
+          "question": "Before anyone relies on a tool, what must be in place? Pick three.",
+          "options": [
+            {
+              "id": "owner",
+              "text": "Who owns the code and passwords"
+            },
+            {
+              "id": "fixer",
+              "text": "Who fixes it when it breaks"
+            },
+            {
+              "id": "data",
+              "text": "Where the data is stored and backed up"
+            },
+            {
+              "id": "cost",
+              "text": "What it costs to run"
+            },
+            {
+              "id": "notes",
+              "text": "Written notes on how it works"
+            },
+            {
+              "id": "exists",
+              "text": "Whether an open-source tool already does it"
+            },
+            {
+              "id": "design",
+              "text": "A nicer design"
+            },
+            {
+              "id": "features",
+              "text": "More features"
+            },
+            {
+              "id": "launch",
+              "text": "Launching sooner"
+            }
           ],
-          "note": "Build it ourselves, or adopt something that does 80% already?"
-        },
-        {
-          "id": "r6",
-          "type": "reveal",
-          "persona": "imran",
-          "text": "Launching is the easy part. A tool is only as good as the people who can keep it running.",
-          "note": "Which of these has caught your organisation out before?"
+          "revealNote": "AI makes building fast, and abandoning things fast too. Ownership, notes, costs and backups decide whether a tool survives.",
+          "core": "Custom vs. open source: is 80% already solved by something that exists?"
         }
-      ]
+      ],
+      "handover": "Let's ride. Everyone's waiting.",
+      "chapter": "The broken bridge"
     },
     {
       "id": "palace",
-      "place": "Travancore Palace",
-      "milestone": "Travancore Palace",
-      "km": 2100,
-      "theme": "Arrival",
-      "landscape": "palace",
+      "place": "palace",
+      "spot": "The gathering",
+      "scene": "palace",
+      "theme": "Collaboration",
       "arrival": true,
-      "persona": "you",
-      "signs": ["Travancore Palace 450 km", "Everyone you met is heading there too"],
+      "sign": "Travancore Palace 2,100 km",
+      "gathering": [
+        {
+          "persona": "meera",
+          "line": "I read the data."
+        },
+        {
+          "persona": "lakshmi",
+          "line": "I reach the people."
+        },
+        {
+          "persona": "arif",
+          "line": "I protect their trust."
+        },
+        {
+          "persona": "ravi",
+          "line": "I keep it running."
+        }
+      ],
       "steps": [
         {
           "id": "q7",
           "type": "question",
-          "format": "wordcloud",
-          "persona": "you",
-          "question": "If this room teamed up on one problem, which should it be?",
-          "maxLength": 40,
-          "note": "Read out three or four. Who's already working on these?"
+          "format": "badges",
+          "question": "Which traveller is your organisation missing most?",
+          "options": [
+            {
+              "id": "A",
+              "text": "Meera, the data",
+              "persona": "meera"
+            },
+            {
+              "id": "B",
+              "text": "Lakshmi, the people",
+              "persona": "lakshmi"
+            },
+            {
+              "id": "C",
+              "text": "Arif, the trust",
+              "persona": "arif"
+            },
+            {
+              "id": "D",
+              "text": "Ravi, keeping it running",
+              "persona": "ravi"
+            }
+          ],
+          "core": "No single person or organisation has all four. That's what communities are for: borrowing the traveller you're missing."
         },
         {
           "id": "closing",
           "type": "closing",
-          "persona": "you",
-          "text": "We left Bengaluru asking what technology makes possible. On the road, we met people who reminded us what matters more: understanding who we build for, protecting their information, and keeping what we build alive. Technology can help us travel faster. The people we travel with decide where we go.",
-          "finalLine": "See you in the Lab.",
+          "text": "Nobody gets here alone. Technology helps us travel faster; the people we travel with decide where we go.",
           "note": "Slow down for this one. End on the last line."
         }
-      ]
+      ],
+      "chapter": "The gathering"
     }
   ]
 }

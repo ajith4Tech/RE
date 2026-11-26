@@ -5,21 +5,17 @@
 //   - vote tallies per step, by option id
 //   - word-cloud answers (pending / approved / rejected by the moderator), each tied to its step
 //   - the discussion timer, the voting countdown and a random round id
-//   - the last command the moderator view sent to the projector (relayed, then forgotten)
 //   - anonymous random voter ids, to allow one vote per phone per step (wiped on reset)
 // No names, no IP addresses, no personal data.
 import { isProfane } from "../public/js/profanity.js";
 
-// idle = lobby, arrive = arriving at a stop, show = a screen without a vote, open / closed = voting,
-// reveal = Stop 1's answer on screen
-const PHASES = ["idle", "arrive", "show", "open", "closed", "reveal"];
+// The beat on screen (public/js/route.js → phaseOf): idle = lobby, open / closed = voting, and the story beats
+// phones show a status line for (cold open, arrive, listen, think, reveal, handover, ride, …).
+const PHASES = ["idle", "cold", "title", "crew", "fact", "crewClose", "ignite", "fired", "ride", "arrive", "listen", "gather", "look", "think", "open", "closed", "reveal", "card", "handover", "closing"];
 const SLOT_RE = /^[A-Za-z0-9_-]{1,24}$/; // slots are step ids
 const ID_RE = /^[A-Za-z0-9_-]{1,24}$/;
 const MAX_WORDS = 600;
 const WORDS_PER_PHONE = 3;
-// Commands the moderator view can send to the projector (the projector does the work)
-const COMMANDS = ["next", "back", "closeVote", "pause", "extend", "addWord", "key", "timer", "mode", "returnLive", "mute", "reset"];
-const KEY_RE = /^[A-Da-d0-9]$/;
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -38,7 +34,6 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return json({ ok: true });
     if (url.pathname === "/v" || url.pathname === "/v/") return env.ASSETS.fetch(new URL("/vote", url));
-    if (url.pathname === "/moderator/") return Response.redirect(new URL("/moderator", url), 301);
     if (url.pathname.startsWith("/api/")) return env.GAME.get(env.GAME.idFromName("main")).fetch(request);
     return env.ASSETS.fetch(request);
   },
@@ -59,7 +54,7 @@ function addToTally(t, a) {
 
 const emptyTally = () => ({ n: 0, counts: {} });
 const newRound = () => Math.random().toString(36).slice(2, 8);
-const freshState = () => ({ slot: "intro", phase: "idle", round: newRound(), tallies: {}, words: [], wordSeq: 0, timer: { duration: 60, endsAt: null } });
+const freshState = () => ({ slot: "lobby", phase: "idle", round: newRound(), tallies: {}, words: [], wordSeq: 0, timer: { duration: 60, endsAt: null } });
 
 // ------------------------------------------------------------------ Durable Object
 export class Game {
@@ -70,7 +65,6 @@ export class Game {
     this.broadcastTimer = null;
     this.voterTimer = null;
     this.lastVoterSend = 0;
-    this.cmd = null; // the last relayed moderator command (memory only)
     ctx.blockConcurrencyWhile(async () => {
       const saved = await ctx.storage.get("state");
       this.state = saved && saved.slot !== undefined ? { ...freshState(), ...saved } : freshState();
@@ -124,7 +118,6 @@ export class Game {
     if (forPresenter) {
       out.words = this.approvedWords();
       out.pending = this.wordsHere().filter((w) => w.status === "pending").length;
-      if (this.cmd) out.cmd = { ...this.cmd, age: Date.now() - this.cmd.at };
     }
     return out;
   }
@@ -262,23 +255,6 @@ export class Game {
         await this.ctx.storage.put("state", s);
         this.scheduleBroadcast(true);
         return [{ ok: true, state: this.publicState(true) }, 200];
-      }
-      case "command": {
-        // The moderator view (on a phone) drives the projector: relayed straight to it, run there once.
-        if (!COMMANDS.includes(body.cmd)) return [{ error: "bad command" }, 400];
-        if (body.cmd === "key" && !KEY_RE.test(String(body.key || ""))) return [{ error: "bad key" }, 400];
-        // Ids only ever grow (clock-based), even if this object restarts and forgets the last one
-        const c = { id: Math.max(Date.now(), (this.cmd?.id || 0) + 1), cmd: body.cmd, at: Date.now() };
-        if (body.arg != null) c.arg = Math.max(-600, Math.min(600, Number(body.arg) || 0));
-        if (body.cmd === "key") c.key = String(body.key);
-        if (body.cmd === "addWord") c.text = String(body.text || "").replace(/\s+/g, " ").trim().slice(0, 40);
-        this.cmd = c;
-        const msg = JSON.stringify({ type: "cmd", cmd: { ...c, age: 0 } });
-        let sent = 0;
-        for (const ws of this.ctx.getWebSockets("presenter")) {
-          try { ws.send(msg); sent++; } catch {}
-        }
-        return [{ ok: true, sent }, 200];
       }
       case "words": // the moderator queue: this question only
         return [{ ok: true, words: this.wordsHere().map(({ voter, ...w }) => w) }, 200];

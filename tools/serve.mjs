@@ -1,7 +1,7 @@
 // Zero-dependency static server for HOST MODE (works fully offline).
 // Usage:  node tools/serve.mjs [port]      then open the printed URL (default http://localhost:4321)
 // If the port is busy (e.g. Jenkins on 8080), the next free port is used automatically.
-// /api/state answers { hostOnly: true }, so the projector and moderator view know there is no Live
+// /api/state answers { hostOnly: true }, so the projector knows there is no Live
 // server to wait for (and the browser console stays clean).
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
@@ -18,6 +18,9 @@ const types = {
   ".svg": "image/svg+xml",
   ".woff2": "font/woff2",
   ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
   ".txt": "text/plain; charset=utf-8",
 };
 
@@ -29,7 +32,6 @@ const server = createServer(async (req, res) => {
   }
   if (path === "/") path = "/index.html";
   if (path === "/v" || path === "/v/" || path === "/vote") path = "/vote.html";
-  if (path === "/moderator" || path === "/moderator/") path = "/moderator.html";
   const file = normalize(join(root, path));
   if (!file.startsWith(root)) return res.writeHead(403).end();
   try {

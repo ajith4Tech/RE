@@ -1,0 +1,429 @@
+<!DOCTYPE html><html lang="en" class="dark"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projector · Stop 2A: Adilabad (Forest Edge) — The Ride</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'crew-teal': '#0F766E',
+        'crew-teal-bright': '#2DD4BF',
+        'meera-forest': '#15803D',
+        'meera-forest-bright': '#4ADE80',
+        'lakshmi-saffron': '#D97706',
+        'lakshmi-saffron-bright': '#FBBF24',
+        'arif-indigo': '#4338CA',
+        'arif-indigo-bright': '#818CF8',
+        'ravi-terracotta': '#C2410C',
+        'ravi-terracotta-bright': '#FB923C',
+        'warning-amber': '#D97706',
+        'success-green': '#15803D',
+        'light-primary': '#005C55',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#0F766E',
+        'light-on-primary-container': '#A3FAEF',
+        'light-secondary': '#904D00',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#FE932C',
+        'light-on-secondary-container': '#663500',
+        'light-tertiary': '#952C00',
+        'light-on-tertiary': '#FFFFFF',
+        'light-tertiary-container': '#BD3D07',
+        'light-on-tertiary-container': '#FFE4DD',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#FFF8F4',
+        'light-on-background': '#1E1B18',
+        'light-surface': '#FFF8F4',
+        'light-surface-dim': '#E0D9D3',
+        'light-surface-bright': '#FFF8F4',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#FAF2ED',
+        'light-surface-container': '#F4ECE7',
+        'light-surface-container-high': '#EEE7E1',
+        'light-surface-container-highest': '#E9E1DC',
+        'light-on-surface': '#1E1B18',
+        'light-surface-variant': '#D9E5E2',
+        'light-on-surface-variant': '#3E4947',
+        'light-outline': '#6E7977',
+        'light-outline-variant': '#BDC9C6',
+        'light-inverse-surface': '#33302C',
+        'light-inverse-on-surface': '#F7EFEA',
+        'light-inverse-primary': '#80D5CB',
+        'dark-primary': '#80D5CB',
+        'dark-on-primary': '#003733',
+        'dark-primary-container': '#0F766E',
+        'dark-on-primary-container': '#A3FAEF',
+        'dark-secondary': '#FFB77D',
+        'dark-on-secondary': '#4D2600',
+        'dark-secondary-container': '#D97707',
+        'dark-on-secondary-container': '#3C1C00',
+        'dark-tertiary': '#FFB59D',
+        'dark-on-tertiary': '#5D1800',
+        'dark-tertiary-container': '#BD3D07',
+        'dark-on-tertiary-container': '#FFE4DD',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#161310',
+        'dark-on-background': '#E9E1DC',
+        'dark-surface': '#161310',
+        'dark-surface-dim': '#161310',
+        'dark-surface-bright': '#3C3835',
+        'dark-surface-container-lowest': '#100E0B',
+        'dark-surface-container-low': '#1E1B18',
+        'dark-surface-container': '#221F1C',
+        'dark-surface-container-high': '#2D2926',
+        'dark-surface-container-highest': '#383431',
+        'dark-on-surface': '#E9E1DC',
+        'dark-surface-variant': '#3E4947',
+        'dark-on-surface-variant': '#BDC9C6',
+        'dark-outline': '#889391',
+        'dark-outline-variant': '#3E4947',
+        'dark-inverse-surface': '#E9E1DC',
+        'dark-inverse-on-surface': '#33302C',
+        'dark-inverse-primary': '#006A63',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '10px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '24px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '16px',
+        'gutter-lg': '24px',
+        'gutter-xl': '32px',
+        'section': '48px',
+        'page-margin': '24px',
+      },
+      fontFamily: {
+        'display': ['"Playfair"', 'sans-serif'],
+        'headline': ['"Playfair"', 'sans-serif'],
+        'title': ['"Poppins"', 'sans-serif'],
+        'body': ['"Poppins"', 'sans-serif'],
+        'label': ['"Poppins"', 'sans-serif'],
+        'mono': ['"Red Hat Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-lg': ['56px', { lineHeight: '64px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-lg-mobile': ['32px', { lineHeight: '38px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'display-md': ['44px', { lineHeight: '52px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'display-md-mobile': ['28px', { lineHeight: '34px', letterSpacing: '0px', fontWeight: '700' }],
+        'headline-lg': ['36px', { lineHeight: '44px', letterSpacing: '0px', fontWeight: '600' }],
+        'headline-lg-mobile': ['24px', { lineHeight: '30px', letterSpacing: '0px', fontWeight: '600' }],
+        'headline-md': ['26px', { lineHeight: '34px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-lg': ['20px', { lineHeight: '28px', letterSpacing: '0px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '24px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'body-lg': ['18px', { lineHeight: '28px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-md': ['15px', { lineHeight: '22px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.2px', fontWeight: '600' }],
+        'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.3px', fontWeight: '500' }],
+        'mono-lg': ['24px', { lineHeight: '30px', letterSpacing: '0px', fontWeight: '600' }],
+        'mono-md': ['14px', { lineHeight: '20px', letterSpacing: '0.2px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '300ms',
+        'convoy-glide': '450ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+        'convoy-glide': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+        'convoy-glide': 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair:wght@600;700&amp;family=Poppins:wght@400;500;600;700&amp;family=Red+Hat+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined { display: inline-block; width: 1em; height: 1em; line-height: 1 !important; box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle; }
+  </style>
+</head>
+<body class="bg-dark-background text-dark-on-surface font-body antialiased">
+  <div class="relative min-h-[1024px] w-full overflow-hidden flex flex-col justify-between bg-dark-background" data-stitch-vh="min-h-[1024px]===min-h-screen">
+    <!-- Illustrated Adilabad Teak Forest Backdrop -->
+    <div class="absolute inset-0 z-0">
+      <img src="https://lh3.googleusercontent.com/aida/ALJJyrAXcGjXi3oTGS2EJesmkjNWbfjdeQrV2H1eEtO_Dj8zbLt5pGm6K_ZDPYFuSaERIK_YOzbmE9GZ1v-JrpnO0AeeHARd2IhRV1I02KGwSFODDJNhv6Q2XwMzkFe_i72cukC4v0r_wjuujuicFB0Vk6FtpB2MZo8a5YZkdrvyuJlzj7xnSWAWSsgOCmQLOSOtYte49LHmILr-qSRZEX68KTJ3GmGldGkMHWb2RojG9eGC0oDFUbSxxwYPafZICAeY0g" alt="Tall teak forest edge in Adilabad with a camera trap on a trunk, pugmarks in mud, and a distant watchtower" class="w-full h-full object-cover object-center opacity-45">
+      <div class="absolute inset-0 bg-gradient-to-b from-dark-background/90 via-dark-background/60 to-dark-background"></div>
+    </div>
+
+    <!-- ALWAYS VISIBLE TOP HUD: Quest Line + Chapter + Recap + Stage Beat Switcher -->
+    <header class="relative z-10 w-full px-gutter-lg lg:px-section pt-gutter-md pb-gutter-sm flex flex-wrap items-center justify-between gap-gutter-md border-b border-dark-outline-variant/50 bg-dark-background/80">
+      <div class="flex flex-col gap-gutter-xs">
+        <span class="font-mono text-mono-md text-meera-forest-bright uppercase tracking-wider" data-design-text-token="mono-md">
+          Chapter 2 of 5 · The forest edge · Discovery
+        </span>
+        <span class="font-title text-title-md text-dark-on-surface" data-design-text-token="title-md">
+          Are we building what people actually need?
+        </span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-gutter-md">
+        <!-- Last stop recap -->
+        <div class="px-gutter-md py-gutter-xs rounded-md bg-dark-surface-container-low border border-dark-outline-variant flex items-center gap-gutter-sm">
+          <span class="material-symbols-outlined text-title-md text-crew-teal-bright" aria-hidden="true">history</span>
+          <span class="font-body text-body-md text-dark-on-surface-variant" data-design-text-token="body-md">
+            Last stop: <strong class="text-dark-on-surface font-semibold">Knowing what to build (48%)</strong>
+          </span>
+        </div>
+
+        <!-- Interactive Beat Toggle so you can see Question -> Meera Joins on the single road -->
+        <button id="beat-toggle-btn" type="button" onclick="toggleStageBeat()" data-component-id="button-beat-toggle" data-component-type="button" data-component-variant="pill" class="px-gutter-md py-gutter-xs rounded-full bg-dark-surface-container text-dark-on-surface border border-dark-outline-variant font-label text-label-sm hover:bg-dark-surface-container-high whitespace-nowrap">
+          <span id="beat-toggle-label" data-design-text-token="label-sm">Preview: Meera joins road →</span>
+        </button>
+
+        <!-- Players on board -->
+        <div class="px-gutter-md py-gutter-xs rounded-full bg-dark-surface-container border border-dark-outline-variant flex items-center gap-gutter-sm">
+          <span class="w-2.5 h-2.5 rounded-full bg-meera-forest-bright" aria-hidden="true"></span>
+          <span class="font-label text-label-lg text-dark-on-surface-variant" data-design-text-token="label-lg">On board</span>
+          <span class="font-mono text-mono-md text-dark-on-surface tabular-nums" data-design-text-token="mono-md">142</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- POP-UP QUESTION & VOTE CARD (Floats cleanly above the single road) -->
+    <main class="relative z-10 flex-1 w-full px-gutter-lg lg:px-section py-gutter-md flex items-center">
+      <div class="w-full p-gutter-lg lg:p-gutter-xl rounded-xl bg-dark-surface-container-low/95 border border-dark-outline-variant grid grid-cols-1 lg:grid-cols-12 items-center gap-gutter-xl">
+        <!-- Left 8 cols: Meera's Persona + Question (or Reveal Twist) + 4 Options -->
+        <div class="lg:col-span-8 flex flex-col gap-gutter-md min-w-0">
+          <div class="flex flex-wrap items-center gap-gutter-md">
+            <span data-component-id="badge-status" data-component-type="badge" data-component-variant="status" role="status" class="inline-flex items-center gap-gutter-sm px-gutter-md py-gutter-xs rounded-full bg-meera-forest text-light-on-primary whitespace-nowrap">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">visibility</span>
+              <span class="font-label text-label-lg" data-design-text-token="label-lg">Meera</span>
+            </span>
+            <span class="font-mono text-mono-md text-dark-on-surface-variant" data-design-text-token="mono-md">STOP 2A · ADILABAD · 870 KM</span>
+          </div>
+
+          <p id="story-line" class="font-body text-body-lg text-dark-on-surface-variant max-w-prose text-pretty" data-design-text-token="body-lg">
+            &#34;I have 4,000 camera-trap photos and ten years of notes on cattle lost to tigers. I want to know where the next attack is likely, before it happens.&#34;
+          </p>
+
+          <h1 id="stage-headline" class="font-display text-display-md-mobile lg:text-headline-lg text-dark-on-surface text-balance" data-design-text-token="headline-lg">
+            AI says the next attacks will be in three villages. What do you do?
+          </h1>
+
+          <!-- 4 Options with Live Room Results -->
+          <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-gutter-sm">
+            <div class="p-gutter-md rounded-lg bg-dark-surface-container border border-dark-outline-variant flex flex-col gap-gutter-xs">
+              <div class="flex items-center justify-between gap-gutter-sm">
+                <p class="font-body text-body-md text-dark-on-surface" data-design-text-token="body-md">Act on it now</p>
+                <span class="font-mono text-mono-md text-dark-on-surface-variant tabular-nums shrink-0" data-design-text-token="mono-md">18%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-dark-surface-container-highest overflow-hidden">
+                <div class="h-full rounded-full bg-dark-outline" style="width: 18%;"></div>
+              </div>
+            </div>
+
+            <div class="p-gutter-md rounded-lg bg-dark-surface-container border-2 border-meera-forest-bright flex flex-col gap-gutter-xs">
+              <div class="flex items-center justify-between gap-gutter-sm">
+                <p class="font-body text-body-md text-dark-on-surface font-semibold" data-design-text-token="body-md">Check with Meera&#39;s field notes</p>
+                <span class="font-mono text-mono-md text-meera-forest-bright tabular-nums shrink-0" data-design-text-token="mono-md">54%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-dark-surface-container-highest overflow-hidden">
+                <div class="h-full rounded-full bg-meera-forest-bright" style="width: 54%;"></div>
+              </div>
+            </div>
+
+            <div class="p-gutter-md rounded-lg bg-dark-surface-container border border-dark-outline-variant flex flex-col gap-gutter-xs">
+              <div class="flex items-center justify-between gap-gutter-sm">
+                <p class="font-body text-body-md text-dark-on-surface" data-design-text-token="body-md">Send it straight to villagers</p>
+                <span class="font-mono text-mono-md text-dark-on-surface-variant tabular-nums shrink-0" data-design-text-token="mono-md">21%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-dark-surface-container-highest overflow-hidden">
+                <div class="h-full rounded-full bg-dark-outline" style="width: 21%;"></div>
+              </div>
+            </div>
+
+            <div class="p-gutter-md rounded-lg bg-dark-surface-container border border-dark-outline-variant flex flex-col gap-gutter-xs">
+              <div class="flex items-center justify-between gap-gutter-sm">
+                <p class="font-body text-body-md text-dark-on-surface" data-design-text-token="body-md">Ignore it; AI doesn&#39;t know forests</p>
+                <span class="font-mono text-mono-md text-dark-on-surface-variant tabular-nums shrink-0" data-design-text-token="mono-md">7%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-dark-surface-container-highest overflow-hidden">
+                <div class="h-full rounded-full bg-dark-outline" style="width: 7%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 4 cols: Voting Timer + QR (hidden on Reveal/Join) -->
+        <div id="qr-panel" class="lg:col-span-4 flex flex-col items-center lg:items-end">
+          <div class="w-full max-w-xs p-gutter-md rounded-xl bg-dark-surface-container border border-dark-outline-variant flex flex-col items-center gap-gutter-sm">
+            <div class="w-full flex items-center justify-between">
+              <span class="inline-flex items-center gap-gutter-xs font-label text-label-lg text-meera-forest-bright" data-design-text-token="label-lg">
+                <span class="w-2.5 h-2.5 rounded-full bg-meera-forest-bright" aria-hidden="true"></span>
+                Voting open
+              </span>
+              <span class="font-mono text-mono-lg text-dark-on-surface tabular-nums" data-design-text-token="mono-lg">00:18</span>
+            </div>
+
+            <div class="w-36 h-36 p-gutter-sm rounded-lg bg-light-surface-container-lowest flex items-center justify-center">
+              <svg viewBox="0 0 120 120" class="w-full h-full text-light-on-surface" fill="currentColor" role="img" aria-label="QR Code to vote">
+                <path d="M8 8h32v32H8V8zm6 6v20h20V14H14zm6 6h8v8h-8v-8z"></path>
+                <path d="M80 8h32v32H80V8zm6 6v20h20V14H86zm6 6h8v8h-8v-8z"></path>
+                <path d="M8 80h32v32H8V80zm6 6v20h20V86H14zm6 6h8v8h-8v-8z"></path>
+                <path d="M46 10h6v6h-6v-6zm12 0h6v12h-6V10zm12 6h6v6h-6v-6zM46 22h12v6H46v-6zm18 6h12v6H64v-6zM46 34h6v6h-6v-6zm12 6h6v6h-6v-6z"></path>
+                <path d="M10 46h12v6H10v-6zm18 0h6v12h-6V46zm12 6h6v6h-6v-6zM10 58h6v12h-6V58zm12 6h12v6H22v-6zm24-12h12v6H46v-6zm18 6h12v6H64v-6zm18-12h6v12h-6V46zm12 0h12v6H94v-6zm0 12h6v12h-6V58zm12 6h6v12h-6V64z"></path>
+                <path d="M46 70h6v12h-6V70zm12 6h12v6H58v-6zm18-6h6v6h-6v-6zm-24 18h12v6H52v-6zm18 0h12v12H70V88zm18-6h12v6H88v-6zm-42 18h6v12h-6v-12zm18 6h6v6h-6v-6zm18-6h12v6H82v-6zm18 6h12v6h-12v-6z"></path>
+              </svg>
+            </div>
+
+            <span class="font-mono text-mono-md text-dark-on-surface tabular-nums" data-design-text-token="mono-md">118 / 142 voted</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- SINGLE CONTINUOUS ROAD STAGE WITH VISIBLE RIDERS ON MOTORCYCLES -->
+    <section aria-label="The Road Stage" class="relative z-10 w-full flex flex-col">
+      <!-- Riders on the single road -->
+      <div class="w-full px-gutter-lg lg:px-section flex items-end justify-between">
+        <div class="flex items-end gap-gutter-lg">
+          <!-- Meera's Forest-Green Motorcycle + Rider (joins behind lead bike in convoy!) -->
+          <div id="meera-bike" class="relative -mb-4 flex flex-col items-center opacity-70 transition-all duration-convoy-glide ease-convoy-glide">
+            <div id="meera-tag" class="mb-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-dark-surface-container border border-dashed border-meera-forest-bright text-meera-forest-bright flex items-center gap-gutter-xs">
+              <span class="material-symbols-outlined text-label-lg" aria-hidden="true">visibility</span>
+              <span id="meera-tag-text" class="font-label text-label-sm" data-design-text-token="label-sm">Meera · Waiting roadside</span>
+            </div>
+            <!-- SVG Rider on Forest-Green Motorcycle -->
+            <svg viewBox="0 0 220 130" class="w-44 h-28" role="img" aria-label="Meera in forest-green helmet and jacket on motorcycle">
+              <circle cx="52" cy="96" r="24" fill="#161310" stroke="#889391" stroke-width="5"></circle>
+              <circle cx="52" cy="96" r="10" fill="none" stroke="#BDC9C6" stroke-width="2"></circle>
+              <circle cx="168" cy="96" r="24" fill="#161310" stroke="#889391" stroke-width="5"></circle>
+              <circle cx="168" cy="96" r="10" fill="none" stroke="#BDC9C6" stroke-width="2"></circle>
+              <path d="M24 94h48l22-18h40l26 18" fill="none" stroke="#BDC9C6" stroke-width="4" stroke-linecap="round"></path>
+              <rect x="86" y="70" width="32" height="24" rx="5" fill="#383431" stroke="#889391" stroke-width="2"></rect>
+              <path d="M90 62c12-10 34-10 44 0l-6 12H88z" fill="#15803D" stroke="#4ADE80" stroke-width="2"></path>
+              <path d="M142 52l22 40" stroke="#BDC9C6" stroke-width="5" stroke-linecap="round"></path>
+              <circle cx="154" cy="54" r="6" fill="#FBBF24"></circle>
+              <path d="M84 62l16 14l-4 18" fill="none" stroke="#33302C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M76 62c2-18 14-26 26-22l12 18l-18 8z" fill="#15803D" stroke="#4ADE80" stroke-width="1.5"></path>
+              <path d="M98 44l28 8l14-2" fill="none" stroke="#4ADE80" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+              <circle cx="96" cy="24" r="13" fill="#4ADE80" stroke="#161310" stroke-width="2"></circle>
+              <path d="M98 20h11c0 6-4 9-11 9z" fill="#161310"></path>
+            </svg>
+          </div>
+
+          <!-- Lead Tech4Good Teal Motorcycle + Rider -->
+          <div class="relative -mb-4 flex flex-col items-center">
+            <div class="mb-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-crew-teal text-light-on-primary flex items-center gap-gutter-xs">
+              <span class="material-symbols-outlined text-label-lg" aria-hidden="true">explore</span>
+              <span class="font-label text-label-sm" data-design-text-token="label-sm">Tech4Good · Lead bike</span>
+            </div>
+            <svg viewBox="0 0 220 130" class="w-48 h-28" role="img" aria-label="Tech4Good rider in teal helmet and jacket on lead motorcycle">
+              <circle cx="52" cy="96" r="24" fill="#161310" stroke="#889391" stroke-width="5"></circle>
+              <circle cx="52" cy="96" r="10" fill="none" stroke="#BDC9C6" stroke-width="2"></circle>
+              <circle cx="168" cy="96" r="24" fill="#161310" stroke="#889391" stroke-width="5"></circle>
+              <circle cx="168" cy="96" r="10" fill="none" stroke="#BDC9C6" stroke-width="2"></circle>
+              <path d="M24 94h48l22-18h40l26 18" fill="none" stroke="#BDC9C6" stroke-width="4" stroke-linecap="round"></path>
+              <rect x="86" y="70" width="32" height="24" rx="5" fill="#383431" stroke="#889391" stroke-width="2"></rect>
+              <path d="M90 62c12-10 34-10 44 0l-6 12H88z" fill="#0F766E" stroke="#2DD4BF" stroke-width="2"></path>
+              <path d="M142 52l22 40" stroke="#BDC9C6" stroke-width="5" stroke-linecap="round"></path>
+              <circle cx="154" cy="54" r="6" fill="#FBBF24"></circle>
+              <polygon points="160,50 218,34 218,74 160,58" fill="#FBBF24" opacity="0.16"></polygon>
+              <path d="M84 62l16 14l-4 18" fill="none" stroke="#33302C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M76 62c2-18 14-26 26-22l12 18l-18 8z" fill="#0F766E" stroke="#2DD4BF" stroke-width="1.5"></path>
+              <path d="M98 44l28 8l14-2" fill="none" stroke="#2DD4BF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+              <circle cx="96" cy="24" r="13" fill="#2DD4BF" stroke="#003733" stroke-width="2"></circle>
+              <path d="M98 20h11c0 6-4 9-11 9z" fill="#161310"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Roadside Milestone Sign -->
+        <div class="mb-gutter-xs px-gutter-md py-gutter-sm rounded-md bg-dark-surface-container border border-meera-forest-bright flex flex-col items-center">
+          <span class="font-mono text-mono-md text-meera-forest-bright font-semibold" data-design-text-token="mono-md">870 KM</span>
+          <span class="font-label text-label-sm text-dark-on-surface" data-design-text-token="label-sm">Adilabad</span>
+        </div>
+      </div>
+
+      <!-- Single Continuous Highway Strip -->
+      <div class="w-full h-14 bg-dark-surface-container-highest border-t-2 border-b-2 border-dark-outline flex items-center px-gutter-lg">
+        <div class="w-full border-t-2 border-dashed border-lakshmi-saffron-bright/70"></div>
+      </div>
+
+      <!-- ALWAYS VISIBLE BOTTOM HUD: Route Progress + Participation Fuel Gauge -->
+      <footer class="w-full px-gutter-lg lg:px-section py-gutter-md bg-dark-background/95 flex flex-wrap items-center justify-between gap-gutter-lg">
+        <div class="flex flex-wrap items-center gap-gutter-md">
+          <div class="flex items-center gap-gutter-xs text-crew-teal-bright">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">check_circle</span>
+            <span class="font-label text-label-lg" data-design-text-token="label-lg">Bengaluru</span>
+          </div>
+          <span class="text-dark-outline font-mono text-mono-md">──</span>
+          <div class="flex items-center gap-gutter-xs px-gutter-md py-gutter-xs rounded-full bg-meera-forest text-light-on-primary">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">visibility</span>
+            <span class="font-label text-label-lg" data-design-text-token="label-lg">Adilabad · 870 km</span>
+          </div>
+          <span class="text-dark-outline font-mono text-mono-md">──</span>
+          <span class="font-label text-label-lg text-dark-on-surface-variant" data-design-text-token="label-lg">Nagpur</span>
+          <span class="text-dark-outline font-mono text-mono-md">──</span>
+          <span class="font-label text-label-lg text-dark-on-surface-variant" data-design-text-token="label-lg">Jhansi</span>
+          <span class="text-dark-outline font-mono text-mono-md">──</span>
+          <span class="font-label text-label-lg text-dark-on-surface-variant" data-design-text-token="label-lg">Travancore Palace</span>
+        </div>
+
+        <div class="flex items-center gap-gutter-sm">
+          <span class="font-label text-label-sm text-dark-on-surface-variant uppercase" data-design-text-token="label-sm">Fuel</span>
+          <span class="material-symbols-outlined text-title-md text-lakshmi-saffron-bright" aria-hidden="true">local_gas_station</span>
+          <div class="w-32 h-3 rounded-full bg-dark-surface-container-highest overflow-hidden">
+            <div class="h-full rounded-full bg-lakshmi-saffron-bright" style="width: 83%;"></div>
+          </div>
+          <span class="font-mono text-mono-md text-dark-on-surface tabular-nums" data-design-text-token="mono-md">83%</span>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <script>
+    let joined = false;
+    function toggleStageBeat() {
+      joined = !joined;
+      const meeraBike = document.getElementById('meera-bike');
+      const meeraTag = document.getElementById('meera-tag');
+      const meeraTagText = document.getElementById('meera-tag-text');
+      const headline = document.getElementById('stage-headline');
+      const storyLine = document.getElementById('story-line');
+      const toggleLabel = document.getElementById('beat-toggle-label');
+
+      if (joined) {
+        meeraBike.classList.remove('opacity-70');
+        meeraTag.classList.remove('bg-dark-surface-container', 'border-dashed', 'text-meera-forest-bright');
+        meeraTag.classList.add('bg-meera-forest', 'text-light-on-primary');
+        meeraTagText.textContent = 'Meera · Joined convoy!';
+        storyLine.textContent = 'Twist: "The three villages are the only ones with mobile signal. That\'s where the reports came from."';
+        headline.textContent = '"Even if the warning is right, it\'s useless if it doesn\'t reach people. Lakshmi knows how."';
+        toggleLabel.textContent = '← Back to Question';
+      } else {
+        meeraBike.classList.add('opacity-70');
+        meeraTag.classList.add('bg-dark-surface-container', 'border-dashed', 'text-meera-forest-bright');
+        meeraTag.classList.remove('bg-meera-forest', 'text-light-on-primary');
+        meeraTagText.textContent = 'Meera · Waiting roadside';
+        storyLine.textContent = '"I have 4,000 camera-trap photos and ten years of notes on cattle lost to tigers. I want to know where the next attack is likely, before it happens."';
+        headline.textContent = 'AI says the next attacks will be in three villages. What do you do?';
+        toggleLabel.textContent = 'Preview: Meera joins road →';
+      }
+    }
+  </script>
+
+
+</body></html>
