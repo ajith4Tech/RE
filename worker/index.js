@@ -5,13 +5,14 @@
 //   - vote tallies per step, by option id
 //   - word-cloud answers (pending / approved / rejected by the moderator), each tied to its step
 //   - the discussion timer, the voting countdown and a random round id
+//   - the room's choice on the question on screen (an option id), so phones can show its effect after the reveal
 //   - anonymous random voter ids, to allow one vote per phone per step (wiped on reset)
 // No names, no IP addresses, no personal data.
 import { isProfane } from "../public/js/profanity.js";
 
 // The beat on screen (public/js/route.js → phaseOf): idle = lobby, open / closed = voting, and the story beats
 // phones show a status line for (cold open, arrive, listen, think, reveal, handover, ride, …).
-const PHASES = ["idle", "cold", "title", "crew", "fact", "crewClose", "ignite", "fired", "ride", "arrive", "listen", "gather", "look", "think", "open", "closed", "reveal", "card", "handover", "closing"];
+const PHASES = ["idle", "cold", "title", "crew", "fact", "crewClose", "ignite", "fired", "rules", "ride", "arrive", "detour", "listen", "gather", "look", "think", "open", "closed", "reveal", "takeaway", "card", "dash", "ledger", "routes", "handover", "closing", "signoff"];
 const SLOT_RE = /^[A-Za-z0-9_-]{1,24}$/; // slots are step ids
 const ID_RE = /^[A-Za-z0-9_-]{1,24}$/;
 const MAX_WORDS = 600;
@@ -112,6 +113,7 @@ export class Game {
       riders: this.ctx.getWebSockets("voter").length, // phones connected right now (the lobby's "riders joined")
       timer: this.timerView(),
       vote: this.voteView(),
+      pick: s.pick || null,
     };
     // Phones get the room's live result too, so after voting they see it fill as the big screen does
     if (forPresenter || ["open", "closed", "reveal"].includes(s.phase)) out.tally = tally;
@@ -225,7 +227,9 @@ export class Game {
         const slot = String(body.slot ?? "");
         if (!SLOT_RE.test(slot)) return [{ error: "bad slot" }, 400];
         if (!PHASES.includes(body.phase)) return [{ error: "bad phase" }, 400];
-        const changed = s.slot !== slot || s.phase !== body.phase;
+        const pick = typeof body.pick === "string" && ID_RE.test(body.pick) ? body.pick : null;
+        const changed = s.slot !== slot || s.phase !== body.phase || (s.pick || null) !== pick;
+        s.pick = pick;
         // Moving on to another step: entries the moderator never handled are cleared ("expired"),
         // so they can't turn up in a later word cloud's queue. The discussion timer stops too.
         if (s.slot !== slot) {
