@@ -5,13 +5,13 @@ Generated from `public/content/en.json`, in screen order. Text marked *(not on s
 ## Lobby
 
 - **Title:** Join the ride
-- **Line:** Scan to hop on. You'll vote from your phone.
+- **Line:** Scan to hop on. You'll help from your phone.
 - **Host mode line:** Answer with a show of hands at every stop.
 - **Phones:** You're on board. Look up.
 
 ## Cold open (one scene)
 
-Four cards face down (a blank avatar, “???” and the place). Each click turns one over: the person and their hook. All four stay on screen:
+Four cards face down (a blank avatar, “???” and the place). Each click turns one over: the person, their role (highlighted) and their hook. All four stay on screen:
 
 1. **The forest edge** → **Meera**, Field researcher: **“Ten years of data. One question: where will the tiger strike next?”**  
    *(to say aloud, optional: At the edge of a forest, a researcher has ten years of data and one urgent question.)*
@@ -19,7 +19,7 @@ Four cards face down (a blank avatar, “???” and the place). Each click turns
    *(to say aloud, optional: In a village square, a community worker has 300 families to reach before dark.)*
 3. **The records room** → **Arif**, Data lead: **“Records that could save mothers, or expose them.”**  
    *(to say aloud, optional: In a room full of files, a data lead guards records that could save lives, or expose them.)*
-4. **The broken bridge** → **Ravi**, The cooperative's one-person tech team: **“A tool farmers rely on. Nobody can fix it.”**  
+4. **The broken bridge** → **Ravi**, One-person tech team: **“A tool farmers rely on. Nobody can fix it.”**  
    *(to say aloud, optional: By a broken bridge, a tech worker is stuck with a tool nobody can fix.)*
 
 Next screen, the four of them in a row: **Four people. One road. 2,100 km.** then, larger and warm: **Your choices decide how they get there.** (cue: “Help us at every stop”)
@@ -42,12 +42,12 @@ Next screen, the four of them in a row: **Four people. One road. 2,100 km.** the
 
 ## The rules of the road
 
-**Reach Travancore Palace by 6:00 PM.**
+**Ideal arrival: 6:00 PM.**
 
-- Every answer moves the clock.
-- Every answer adds to the fuel bill.
-- Some choices come back later.
-- Arrive on time, with the smallest bill.
+- Every choice moves the clock.
+- Too cautious costs time and fuel now.
+- Shortcuts save time now, and leave a loose bolt that breaks later.
+- The first step rarely costs you. The choices after it do.
 
 The dashboard on the lead motorcycle (arrival clock and fuel bill) shows from here on. Start: 6:00 PM, ₹2,000.
 
@@ -200,7 +200,7 @@ Link: *(placeholder, QR appears once filled)*
 
 ---
 
-## Jhansi · The broken bridge · Ravi, The cooperative's one-person tech team
+## Jhansi · The broken bridge · Ravi, One-person tech team
 
 **Ride in:** milestone “Jhansi 1,650 km”
 
@@ -243,7 +243,7 @@ Cost: +45 min, +₹500. Phones: “Detour!” with the cost.
 - Meera: “I read the data.”
 - Lakshmi: “I reach the people.”
 - Arif: “I protect their trust.”
-- Ravi: “I keep it running.”
+- Ravi: “I keep the tech running.”
 
 **Trip ledger · This room's run:** arrival time vs 6:00 PM, total fuel bill, the choice at each stop with its effect, bolts planted and broken.
 

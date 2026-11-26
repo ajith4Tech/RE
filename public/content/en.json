@@ -65,7 +65,7 @@
       "roomChose": "Room chose {id}: {effects}",
       "detour": "Detour!",
       "detourCost": "A loose bolt broke: {effects}",
-      "rules": "Goal: Travancore Palace by {time}. Every answer moves the clock and the fuel bill.",
+      "rules": "Ideal arrival: {time}. Every choice moves the clock.",
       "lookAtLedger": "Look up: the trip ledger.",
       "lookAtFuel": "Look up: the fuel bill."
     },
@@ -117,7 +117,7 @@
   },
   "lobby": {
     "title": "Join the ride",
-    "line": "Scan to hop on. You'll vote from your phone.",
+    "line": "Scan to hop on. You'll help from your phone.",
     "button": "Begin",
     "phone": "You're on board. Look up.",
     "hostLine": "Answer with a show of hands at every stop."
@@ -175,14 +175,14 @@
     "note": "Ask the room if they're ready, then fire it up."
   },
   "rules": {
-    "title": "Reach Travancore Palace by {time}.",
+    "title": "Ideal arrival: {time}.",
     "lines": [
-      "Every answer moves the clock.",
-      "Every answer adds to the fuel bill.",
-      "Some choices come back later.",
-      "Arrive on time, with the smallest bill."
+      "Every choice moves the clock.",
+      "Too cautious costs time and fuel now.",
+      "Shortcuts save time now, and leave a loose bolt that breaks later.",
+      "The first step rarely costs you. The choices after it do."
     ],
-    "note": "Keep it light: point at the clock and fuel bill on the lead motorcycle. Don't explain which answers do what; the room finds out on the road."
+    "note": "One screen, short. Point at the clock and fuel bill on the lead motorcycle: they stay on screen all the way."
   },
   "places": [
     {
@@ -232,7 +232,8 @@
       "badge": "binoculars",
       "color": "#15803D",
       "bright": "#4ADE80",
-      "on": "#FFFFFF"
+      "on": "#FFFFFF",
+      "title": "the researcher"
     },
     "lakshmi": {
       "name": "Lakshmi",
@@ -240,7 +241,8 @@
       "badge": "hands",
       "color": "#D97706",
       "bright": "#FBBF24",
-      "on": "#161310"
+      "on": "#161310",
+      "title": "the community worker"
     },
     "arif": {
       "name": "Arif",
@@ -248,15 +250,17 @@
       "badge": "padlock",
       "color": "#4338CA",
       "bright": "#818CF8",
-      "on": "#FFFFFF"
+      "on": "#FFFFFF",
+      "title": "the data lead"
     },
     "ravi": {
       "name": "Ravi",
-      "role": "The cooperative's one-person tech team",
+      "role": "One-person tech team",
       "badge": "wrench",
       "color": "#C2410C",
       "bright": "#FB923C",
-      "on": "#FFFFFF"
+      "on": "#FFFFFF",
+      "title": "the tech team"
     }
   },
   "bolts": {
@@ -693,7 +697,7 @@
         },
         {
           "persona": "ravi",
-          "line": "I keep it running."
+          "line": "I keep the tech running."
         }
       ],
       "steps": [

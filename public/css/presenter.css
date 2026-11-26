@@ -532,12 +532,12 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .cc.just { animation: cclift 1500ms cubic-bezier(.3, 0, .2, 1); z-index: 2; }
 @keyframes cclift { 0% { transform: none; } 30% { transform: translateY(-28px) scale(1.14); } 75% { transform: translateY(-10px) scale(1.06); } 100% { transform: none; } }
 .cc.just .cc-back { animation: ccglow 2000ms ease-out; }
-@keyframes ccglow { 0% { box-shadow: 0 0 0 0 transparent; } 35% { box-shadow: 0 0 90px 16px color-mix(in srgb, var(--pc-bright) 75%, transparent); } 100% { box-shadow: 0 0 24px -4px color-mix(in srgb, var(--pc-bright) 45%, transparent); } }
+@keyframes ccglow { 0% { box-shadow: 0 0 0 0 transparent; } 35% { box-shadow: 0 0 60px 8px color-mix(in srgb, var(--pc-bright) 55%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .cc.just .cc-line { animation: hook 900ms 700ms var(--glide-ease) both; }
 @keyframes hook { from { opacity: 0; transform: scale(1.25); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
 /* Both faces share one layout: avatar, name, role (or place), then the hook */
 .cc-face { grid-area: 1 / 1; padding: var(--g-lg) var(--g-md); border-radius: var(--r-xl); backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; text-align: center; }
-.cc-av { width: 84px; height: 84px; font-size: 42px; margin-bottom: var(--g-xs); }
+.cc-av { width: 72px; height: 72px; font-size: 34px; margin-bottom: var(--g-xs); }
 .cc-name { font: 700 30px/36px var(--f-display); color: var(--d-on-surface); }
 .cc-role { color: var(--pc-bright); letter-spacing: 1px; }
 .cc-front { background: linear-gradient(160deg, var(--d-surface-high), var(--d-surface-lowest)); border: 1px solid var(--d-outline-variant); }
@@ -549,9 +549,10 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .cc-bars i:last-child { width: 60%; align-self: center; }
 .cc.next .cc-front { animation: ccwait 2.2s ease-in-out infinite; }
 @keyframes ccwait { 50% { border-color: var(--d-outline); box-shadow: 0 0 28px -6px rgb(255 255 255 / .3); } }
-.cc-back { transform: rotateY(180deg); background: linear-gradient(170deg, color-mix(in srgb, var(--pc) 38%, var(--d-surface-container)), var(--d-surface-container) 60%); border: 2px solid var(--pc-bright); box-shadow: 0 0 24px -4px color-mix(in srgb, var(--pc-bright) 45%, transparent); }
-.cc-line { margin-top: var(--g-sm); font: 700 25px/32px var(--f-display); color: #fff8ec; }
-.avatar { display: inline-grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--pc); color: var(--pc-on); border: 2px solid var(--pc-bright); font-size: 28px; }
+/* At rest the turned card is calm: plain dark, a thin border in their colour; the colour flashes only as it turns */
+.cc-back { transform: rotateY(180deg); justify-content: center; background: var(--d-surface-container); border: 1.5px solid color-mix(in srgb, var(--pc-bright) 75%, transparent); }
+.cc-line { margin-top: var(--g-md); font: 600 24px/32px var(--f-display); color: #fff8ec; }
+.avatar { display: inline-grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--pc); color: var(--pc-on); font-size: 28px; }
 .cc-final { font: 600 30px/40px var(--f-display); text-align: center; color: var(--crew-bright); opacity: 0; transform: translateY(8px); transition: opacity 800ms ease, transform 800ms var(--glide-ease); }
 .cc-final.on { opacity: 1; transform: none; }
 
@@ -602,3 +603,18 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .card.dash-card .readout { justify-content: center; padding: var(--g-lg); }
 .card.dash-card .prompt { font: 600 34px/44px var(--f-display); color: var(--d-on-surface); text-align: center; }
 .readout .big-nut { width: 52px; height: 52px; color: #fb8a5a; }
+
+/* Each traveller's role, highlighted: a bold pill in their colour, the thing to remember them by */
+.cc-tag { max-width: 100%; text-align: center; margin-top: 2px; padding: 4px 14px; border-radius: var(--r-full); background: color-mix(in srgb, var(--pc-bright) 16%, transparent); border: 1px solid color-mix(in srgb, var(--pc-bright) 60%, transparent); color: var(--pc-bright); font: 600 16px/22px var(--f-ui); }
+.cc.just .cc-tag { animation: chipin 600ms 500ms var(--glide-ease) both; }
+.cc-tag.sm { margin-top: 2px; padding: 3px 12px; font-size: 14px; line-height: 18px; }
+.cl-row { gap: var(--g-xl); }
+.cl-who { max-width: 220px; text-align: center; }
+
+/* Lobby: the title and line sit on the game's dark card, readable on any sky */
+.lobby-l { padding: var(--g-xl); border-radius: var(--r-xl); background: rgb(30 27 24 / .86); border: 1px solid var(--d-outline-variant); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 24px 140px 56px rgb(12 10 8 / .38); }
+.lobby-l .muted { color: var(--d-on-surface); opacity: .85; }
+.lobby { align-items: center; }
+
+/* The gathering: the four travellers across the full card */
+.card.gather .col-main { grid-column: 1 / -1; }
