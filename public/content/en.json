@@ -6,9 +6,6 @@
     "thinkSeconds": 15,
     "extendSeconds": 15,
     "rideMs": 3000,
-    "fuelStart": 50,
-    "fuelPerVote": 10,
-    "fuelPerPump": 20,
     "lowTurnout": 0.3,
     "backdrops": {
       "prologue": "img/scenes/prologue",
@@ -25,12 +22,16 @@
       "road-4": "img/scenes/road-4"
     }
   },
+  "trip": {
+    "idealArrival": "18:00",
+    "baseFuel": 2000,
+    "note": "The arrival clock starts at the ideal time and every answer moves it. The fuel bill starts at the base fuel; every answer burns some fuel (shortcuts burn none now), over-cautious answers burn a lot, and broken bolts cost the most."
+  },
   "ui": {
     "playersOnBoard": "Players on board",
     "hostMode": "Host mode",
     "thinkLabel": "Think it over",
     "votesLocked": "Votes locked",
-    "fuel": "Fuel",
     "builtBy": "Built by",
     "took": "Took",
     "cost": "Cost",
@@ -60,7 +61,13 @@
       "openLink": "Open the link",
       "brand": "The Ride · Tech4Good",
       "progress": "{km} / {total} km",
-      "yourPick": "Your pick: {answer}"
+      "yourPick": "Your pick: {answer}",
+      "roomChose": "Room chose {id}: {effects}",
+      "detour": "Detour!",
+      "detourCost": "A loose bolt broke: {effects}",
+      "rules": "Goal: Travancore Palace by {time}. Every answer moves the clock and the fuel bill.",
+      "lookAtLedger": "Look up: the trip ledger.",
+      "lookAtFuel": "Look up: the fuel bill."
     },
     "chapter": "Chapter {n} of {total} · {name}",
     "towards": "On the road to {place} · {km}",
@@ -71,7 +78,42 @@
     "questionOf": "Question {n} of {total}",
     "fullConvoy": "Full convoy arrived",
     "prologue": "Prologue · {from} → {to} · {km}",
-    "showOfHands": "Show of hands"
+    "showOfHands": "Show of hands",
+    "types": {
+      "smart": "Smart",
+      "careful": "Careful",
+      "over-cautious": "Over-cautious",
+      "shortcut": "Shortcut"
+    },
+    "arrival": "Arrival",
+    "fuelBill": "Fuel bill",
+    "looseBolts": "Loose bolts",
+    "noBolts": "No loose bolts",
+    "boltPlanted": "Bolt planted",
+    "detour": "Detour",
+    "detourSign": "DETOUR",
+    "plantedAt": "Loose bolt from {spot}",
+    "takeaway": "Takeaway",
+    "roomChose": "The room chose {id}",
+    "tieTitle": "Tie",
+    "early": "{d} early",
+    "late": "{d} late",
+    "onTime": "On time",
+    "vsIdeal": "Ideal {time}",
+    "minutes": {
+      "m": "{m} min",
+      "h": "{h} hr",
+      "hm": "{h} hr {m} min"
+    },
+    "long": {
+      "hour": "1 hour",
+      "hours": "{n} hours",
+      "minute": "1 minute",
+      "minutes": "{n} minutes"
+    },
+    "baseFuel": "Base fuel {amount}",
+    "plantedBroken": "planted → broken",
+    "tieNote": "The presenter picks."
   },
   "lobby": {
     "title": "Join the ride",
@@ -81,17 +123,39 @@
     "hostLine": "Answer with a show of hands at every stop."
   },
   "coldOpen": {
-    "lines": [
-      "At the edge of a forest, a researcher has ten years of data and one urgent question.",
-      "In a village square, a community worker has 300 families to reach before dark.",
-      "In a room full of files, a data lead guards records that could save lives, or expose them.",
-      "By a broken bridge, a tech worker is stuck with a tool nobody can fix.",
-      "Four people. One road. 2,100 km. Your choices decide how they get there."
+    "cards": [
+      {
+        "persona": "meera",
+        "place": "The forest edge",
+        "line": "At the edge of a forest, a researcher has ten years of data and one urgent question.",
+        "hook": "Ten years of data. One question: where will the tiger strike next?"
+      },
+      {
+        "persona": "lakshmi",
+        "place": "The village square",
+        "line": "In a village square, a community worker has 300 families to reach before dark.",
+        "hook": "300 families. One warning. Before dark."
+      },
+      {
+        "persona": "arif",
+        "place": "The records room",
+        "line": "In a room full of files, a data lead guards records that could save lives, or expose them.",
+        "hook": "Records that could save mothers, or expose them."
+      },
+      {
+        "persona": "ravi",
+        "place": "The broken bridge",
+        "line": "By a broken bridge, a tech worker is stuck with a tool nobody can fix.",
+        "hook": "A tool farmers rely on. Nobody can fix it."
+      }
     ],
+    "line": "Four people. One road. 2,100 km.",
     "title": "THE RIDE",
     "from": "Bengaluru",
     "to": "Travancore Palace",
-    "note": "Let each line land in silence before the next. About 45 seconds in all. The engine idles underneath; mute it from Sound if the room is loud."
+    "note": "Four cards, face down. Turn one at a time and let each hook land in silence; the fuller lines, to say aloud if you like: At the edge of a forest, a researcher has ten years of data and one urgent question. / In a village square, a community worker has 300 families to reach before dark. / In a room full of files, a data lead guards records that could save lives, or expose them. / By a broken bridge, a tech worker is stuck with a tool nobody can fix. Then the last line under the cards. The engine idles underneath; mute it from Sound if the room is loud.",
+    "lineYou": "Your choices decide how they get there.",
+    "cue": "Help us at every stop"
   },
   "crew": {
     "label": "Leading the ride",
@@ -109,6 +173,16 @@
     "prompt": "Ready to ride?",
     "phone": "We're off. Listen to the story.",
     "note": "Ask the room if they're ready, then fire it up."
+  },
+  "rules": {
+    "title": "Reach Travancore Palace by {time}.",
+    "lines": [
+      "Every answer moves the clock.",
+      "Every answer adds to the fuel bill.",
+      "Some choices come back later.",
+      "Arrive on time, with the smallest bill."
+    ],
+    "note": "Keep it light: point at the clock and fuel bill on the lead motorcycle. Don't explain which answers do what; the room finds out on the road."
   },
   "places": [
     {
@@ -185,6 +259,40 @@
       "on": "#FFFFFF"
     }
   },
+  "bolts": {
+    "bolt1": {
+      "label": "Alert sent only to the three villages",
+      "persona": "meera",
+      "breaksAt": "adilabadB",
+      "minutes": 90,
+      "rupees": 800,
+      "message": "Remember the alert sent straight to the three villages? Those were simply the villages with mobile signal. The real hotspot had no reports, and cattle were lost there last night."
+    },
+    "bolt2": {
+      "label": "An alert app launched in a week",
+      "persona": "lakshmi",
+      "breaksAt": "pump",
+      "minutes": 60,
+      "rupees": 700,
+      "message": "The alert app? Half the families couldn't install it, and the rest lost signal after dark. We turn back to set up voice calls."
+    },
+    "bolt3": {
+      "label": "Records uploaded with only names removed",
+      "persona": "arif",
+      "breaksAt": "jhansi",
+      "minutes": 90,
+      "rupees": 700,
+      "message": "Remember uploading the records without names? Age, village and diagnosis together pointed to one mother. Her family found out from a report. We stop to repair the damage and the trust."
+    },
+    "bolt4": {
+      "label": "Launched before the notes were written",
+      "persona": "ravi",
+      "breaksAt": "palace",
+      "minutes": 45,
+      "rupees": 500,
+      "message": "The tool stopped working on the way in, and the notes were never written. Nobody can log in."
+    }
+  },
   "stops": [
     {
       "id": "bengaluru",
@@ -193,7 +301,9 @@
       "scene": "workbench",
       "theme": "Possibility",
       "persona": "crew",
-      "voice": "Before we set off, someone shared two websites with us. They made us stop and look twice.",
+      "voice": "Before we set off, someone shared a website with us. It made us stop and look twice.",
+      "short": "Bengaluru",
+      "chapter": "The workbench",
       "steps": [
         {
           "id": "look",
@@ -210,28 +320,16 @@
               "embed": false,
               "caption": "Photos → website",
               "icon": "photo_camera",
-              "tone": "crew"
-            },
-            {
-              "id": "holematthi",
-              "title": "Holématthi Nature Foundation",
-              "url": "https://holematthi-nature-foundation.r-bhuvanesh2007.workers.dev/",
-              "image": "img/showcase-holematthi.png",
-              "builtBy": "PLACEHOLDER: who built the Holématthi site",
-              "took": "PLACEHOLDER: how long the Holématthi site took",
-              "cost": "PLACEHOLDER: what the Holématthi site cost",
-              "embed": true,
-              "caption": "Book → digital",
-              "icon": "menu_book",
-              "tone": "meera"
+              "tone": "crew",
+              "page": "img/showcase-hakki-full.jpg"
             }
           ],
-          "note": "Open either site live from here if the room wants a closer look. Then ask who built them."
+          "note": "Click the website (or press →) to bring it up full screen. Scroll with the mouse wheel or ↓ ↑. Then ask who built it."
         },
         {
           "id": "guess",
           "type": "guess",
-          "question": "Who do you think built these?",
+          "question": "Who do you think built this?",
           "options": [
             {
               "id": "A",
@@ -250,74 +348,106 @@
               "text": "Someone with no coding background, using AI"
             }
           ],
-          "note": "A quick guess, not a question. Show the room's guesses and don't reveal yet."
+          "note": "A quick guess, not a question. Lock it, then reveal who built them.",
+          "reveal": true,
+          "revealSites": true,
+          "revealNote": "No development team built it. The hard part has moved from writing code to choosing the right problem."
         },
         {
           "id": "q1",
           "type": "question",
-          "format": "choose",
-          "question": "If anyone can build something like this, what becomes the hardest part?",
+          "question": "We could build something with AI this weekend. How do we start?",
           "options": [
             {
               "id": "A",
-              "text": "Knowing what to build"
+              "text": "Build a rough version this weekend to test one idea",
+              "type": "smart",
+              "minutes": -30,
+              "rupees": 200,
+              "outcome": "Off to a flying start. Something real on the screen gets real feedback fast."
             },
             {
               "id": "B",
-              "text": "Understanding who'll use it"
+              "text": "Pick one real problem first, then build a small test",
+              "type": "careful",
+              "minutes": 15,
+              "rupees": 100,
+              "outcome": "A short pause to name the problem. Now we know exactly what we're looking for."
             },
             {
               "id": "C",
-              "text": "Keeping it running"
-            },
-            {
-              "id": "D",
-              "text": "Paying for it"
+              "text": "Spend weeks mapping every feature and stakeholder first",
+              "type": "over-cautious",
+              "minutes": 60,
+              "rupees": 500,
+              "outcome": "Still at the workbench while the road waits. Planning for weeks before touching anything burns time and energy."
             }
-          ],
-          "revealSites": true,
-          "revealNote": "Neither had a development team. The hard part has moved from writing code to choosing the right problem.",
-          "core": "AI has collapsed the time and cost of building; non-developers ship real things. The bottleneck is now choosing the right problem."
+          ]
+        },
+        {
+          "id": "t1",
+          "type": "takeaway",
+          "text": "AI makes trying things cheap. Knowing which problem you're trying to solve keeps it useful."
         }
       ],
-      "handover": "If the hard part is the problem, we should go where the problems are.",
-      "chapter": "The workbench"
+      "handover": "If the hard part is the problem, let's go where the problems are."
     },
     {
       "id": "adilabadA",
       "place": "adilabad",
       "spot": "Forest edge",
+      "short": "Forest edge",
       "scene": "forest",
       "theme": "Discovery",
       "persona": "meera",
       "sign": "Adilabad 870 km",
-      "voice": "I have 4,000 camera-trap photos and ten years of notes on cattle lost to tigers. I want to know where the next attack is likely, before it happens.",
+      "voice": "I have ten years of camera-trap photos and notes on cattle lost to tigers. I want to know where the next attack is likely, before it happens.",
       "steps": [
         {
           "id": "q2",
           "type": "question",
-          "format": "choose",
-          "question": "AI says the next attacks will be in three villages. What do you do?",
+          "context": "AI studies her data and points to three villages.",
+          "question": "AI points to three villages. What's our move?",
           "options": [
             {
               "id": "A",
-              "text": "Act on it now"
+              "text": "Send the alert to those three villages tonight",
+              "type": "shortcut",
+              "minutes": -30,
+              "rupees": 0,
+              "bolt": "bolt1",
+              "outcome": "Alert sent, 30 minutes saved. For now. Keep an eye on that bolt."
             },
             {
               "id": "B",
-              "text": "Check it against Meera's field knowledge"
+              "text": "Go through Meera's field notes and the quiet, unrecorded areas first",
+              "type": "careful",
+              "minutes": 30,
+              "rupees": 200,
+              "outcome": "Meera spots it: two villages barely appear in the records. The alert goes where it's needed."
             },
             {
               "id": "C",
-              "text": "Send it straight to the villagers"
+              "text": "Quick check-in with the three villages and two low-signal neighbours",
+              "type": "smart",
+              "minutes": 15,
+              "rupees": 150,
+              "outcome": "Fast and grounded. The quick check-in turns up a missed hotspot next door."
             },
             {
               "id": "D",
-              "text": "Ignore it; AI can't know a forest"
+              "text": "Set the AI aside and stick to the old paper logs",
+              "type": "over-cautious",
+              "minutes": 60,
+              "rupees": 500,
+              "outcome": "Safe, but slow. Hours of useful pattern-spotting left on the table."
             }
-          ],
-          "revealNote": "The three villages are the only ones with mobile signal. That's where the reports came from.",
-          "core": "AI finds patterns only in the data it's given. Gaps and bias become confident answers, and AI can invent things outright. A prediction isn't a decision: people who know the ground check it."
+          ]
+        },
+        {
+          "id": "t2",
+          "type": "takeaway",
+          "text": "AI only sees the data that reached it. Silence in the data can mean missing signal, not safety. Fast pattern-spotting plus people who know the ground is the winning pair."
         }
       ],
       "handover": "Even if the warning is right, it's useless if it doesn't reach people. Lakshmi knows how.",
@@ -327,6 +457,7 @@
       "id": "adilabadB",
       "place": "adilabad",
       "spot": "Village square",
+      "short": "Village",
       "scene": "village",
       "theme": "People",
       "persona": "lakshmi",
@@ -336,28 +467,47 @@
         {
           "id": "q3",
           "type": "question",
-          "format": "choose",
-          "question": "What's the best way to get the warning to them?",
+          "question": "How do we get the warning to these families?",
           "options": [
             {
               "id": "A",
-              "text": "An app with alerts"
+              "text": "Voice messages through channels families already use",
+              "type": "smart",
+              "minutes": -15,
+              "rupees": 150,
+              "outcome": "Fast because it fits: familiar voices on the phones people already have."
             },
             {
               "id": "B",
-              "text": "An SMS in the local language"
+              "text": "Launch an alert app this week",
+              "type": "shortcut",
+              "minutes": -30,
+              "rupees": 0,
+              "bolt": "bolt2",
+              "outcome": "The app is live, 30 minutes saved. Do you hear that rattle?"
             },
             {
               "id": "C",
-              "text": "A voice call in the local language"
+              "text": "Test voice messages with 10 families first, in their own dialect",
+              "type": "careful",
+              "minutes": 30,
+              "rupees": 200,
+              "outcome": "Ten families later, Lakshmi knows the words that land and the time of day people pick up."
             },
             {
               "id": "D",
-              "text": "Lakshmi and volunteers, with AI drafting the messages"
+              "text": "Survey all 300 families before sending anything",
+              "type": "over-cautious",
+              "minutes": 90,
+              "rupees": 600,
+              "outcome": "A thorough survey, while the warning waits. Sometimes over-studying is its own risk."
             }
-          ],
-          "revealNote": "There's no single answer, but the app is the one that fails here.",
-          "core": "Accessibility means language, literacy, devices and connectivity, not just disability. Shape technology around people. AI can support the humans who reach them."
+          ]
+        },
+        {
+          "id": "t3",
+          "type": "takeaway",
+          "text": "Accessibility is language, literacy, devices and signal. Technology works best when it bends to people's lives."
         }
       ],
       "handover": "To reach families, I keep names, phone numbers and addresses. Arif deals with that every day.",
@@ -366,38 +516,29 @@
     {
       "id": "pump",
       "type": "pump",
-      "spot": "Refuel stop",
+      "spot": "Petrol pump",
+      "short": "Pump",
       "scene": "pump",
-      "sign": "Refuel stop",
+      "sign": "Petrol pump",
       "skippable": true,
       "steps": [
         {
-          "id": "pump",
-          "type": "pump",
-          "question": "Does your team use AI today?",
-          "options": [
-            {
-              "id": "A",
-              "text": "Every day"
-            },
-            {
-              "id": "B",
-              "text": "Now and then"
-            },
-            {
-              "id": "C",
-              "text": "Not yet"
-            }
-          ],
-          "resultLine": "This room, right now.",
-          "note": "A quick pulse, not a question. Every answer adds fuel. Skip it if time is short."
+          "id": "dash",
+          "type": "dash",
+          "title": "On the road to Nagpur",
+          "prompt": "How are we doing? Which choice is costing us the most?",
+          "line": "Look at the fuel bill. The shortcuts felt free when we took them. This is where they start costing.",
+          "lineNoBolts": "Look at the fuel bill. No shortcuts so far, so nothing has come loose.",
+          "note": "A pause to reflect, no vote. Say it: “Look at the fuel bill. The shortcuts felt free when we took them. This is where they start costing.” (or, with no shortcuts: “Look at the fuel bill. No shortcuts so far, so nothing has come loose.”). Then ask which choice is costing the most, and whether any loose bolts were worth it."
         }
-      ]
+      ],
+      "arriveLine": "Let's cool down the bikes."
     },
     {
       "id": "nagpur",
       "place": "nagpur",
-      "spot": "Records room",
+      "spot": "Zero Mile · The records room",
+      "short": "Nagpur",
       "scene": "records",
       "theme": "Trust",
       "persona": "arif",
@@ -407,27 +548,34 @@
         {
           "id": "q4",
           "type": "question",
-          "format": "choose",
-          "question": "What should AI be allowed to see to spot the risk?",
+          "question": "How do we let AI look at these records?",
           "options": [
             {
               "id": "A",
-              "text": "Full records"
+              "text": "Remove names and numbers, share only what the question needs, and keep the key that links them back safe at home",
+              "type": "careful",
+              "minutes": 30,
+              "rupees": 200,
+              "outcome": "Slower by half an hour, and the mothers who need care are found without exposing anyone."
             },
             {
               "id": "B",
-              "text": "Records with names and phones removed"
+              "text": "Remove names and numbers, then upload the rest",
+              "type": "shortcut",
+              "minutes": -30,
+              "rupees": 0,
+              "bolt": "bolt3",
+              "outcome": "Names gone, analysis running, 30 minutes saved. That bolt looks loose."
             },
             {
               "id": "C",
-              "text": "Records with identities swapped for tokens"
-            },
-            {
-              "id": "D",
-              "text": "Only clinic-level totals"
+              "text": "Lock everything away and test nothing",
+              "type": "over-cautious",
+              "minutes": 60,
+              "rupees": 500,
+              "outcome": "Nothing exposed, and nothing learned. The mothers who needed early care are still invisible."
             }
-          ],
-          "core": "Share only what the question needs. Removing names isn't enough: age + village + diagnosis can identify someone. Tokens keep analysis useful while identities stay home."
+          ]
         },
         {
           "id": "tokens",
@@ -452,30 +600,9 @@
           "note": "Tokenised is not the same as anonymous. Whoever holds the key can link it back."
         },
         {
-          "id": "q5",
-          "type": "question",
-          "format": "choose",
-          "question": "Where should the AI run?",
-          "options": [
-            {
-              "id": "A",
-              "text": "Cloud AI, under a data agreement"
-            },
-            {
-              "id": "B",
-              "text": "On our own server"
-            },
-            {
-              "id": "C",
-              "text": "Depends on the data"
-            },
-            {
-              "id": "D",
-              "text": "Not ready for either"
-            }
-          ],
-          "revealNote": "Local AI keeps data in-house but needs hardware, skills and upkeep. Cloud AI is more capable, so read the terms.",
-          "core": "Open-source models can run on your own machines. Local isn't automatically safe: access, logs and backups still matter."
+          "id": "t4",
+          "type": "takeaway",
+          "text": "Removing names isn't enough. Share only what the question needs, and guard what can lead back to a person."
         },
         {
           "id": "insight",
@@ -494,6 +621,7 @@
       "id": "jhansi",
       "place": "jhansi",
       "spot": "The broken bridge",
+      "short": "Jhansi",
       "scene": "bridge",
       "theme": "Sustainability",
       "persona": "ravi",
@@ -501,51 +629,41 @@
       "voice": "Two years ago, a college team built us an app for crop prices. They graduated. Now it's broken, nobody has the password, and farmers still call me about it.",
       "steps": [
         {
-          "id": "q6",
+          "id": "q5",
           "type": "question",
-          "format": "pickn",
-          "n": 3,
-          "question": "Before anyone relies on a tool, what must be in place? Pick three.",
+          "question": "Our tool is working. What do we do before moving on?",
           "options": [
             {
-              "id": "owner",
-              "text": "Who owns the code and passwords"
+              "id": "A",
+              "text": "Shared logins, plain notes and a named owner, then launch",
+              "type": "careful",
+              "minutes": 30,
+              "rupees": 200,
+              "outcome": "Thorough. Anyone in the team can pick this up tomorrow."
             },
             {
-              "id": "fixer",
-              "text": "Who fixes it when it breaks"
+              "id": "B",
+              "text": "Launch now, and write the notes once it's stable",
+              "type": "shortcut",
+              "minutes": -30,
+              "rupees": 0,
+              "bolt": "bolt4",
+              "outcome": "Launched, 30 minutes ahead. Who has the password?"
             },
             {
-              "id": "data",
-              "text": "Where the data is stored and backed up"
-            },
-            {
-              "id": "cost",
-              "text": "What it costs to run"
-            },
-            {
-              "id": "notes",
-              "text": "Written notes on how it works"
-            },
-            {
-              "id": "exists",
-              "text": "Whether an open-source tool already does it"
-            },
-            {
-              "id": "design",
-              "text": "A nicer design"
-            },
-            {
-              "id": "features",
-              "text": "More features"
-            },
-            {
-              "id": "launch",
-              "text": "Launching sooner"
+              "id": "C",
+              "text": "Keep it simple: basic notes, a shared login and a monthly check-in",
+              "type": "smart",
+              "minutes": 15,
+              "rupees": 150,
+              "outcome": "Light and practical. It'll still be standing months from now."
             }
-          ],
-          "revealNote": "AI makes building fast, and abandoning things fast too. Ownership, notes, costs and backups decide whether a tool survives.",
-          "core": "Custom vs. open source: is 80% already solved by something that exists?"
+          ]
+        },
+        {
+          "id": "t5",
+          "type": "takeaway",
+          "text": "Launching is a moment. Keeping it running is a habit."
         }
       ],
       "handover": "Let's ride. Everyone's waiting.",
@@ -555,6 +673,7 @@
       "id": "palace",
       "place": "palace",
       "spot": "The gathering",
+      "short": "Palace",
       "scene": "palace",
       "theme": "Collaboration",
       "arrival": true,
@@ -579,42 +698,81 @@
       ],
       "steps": [
         {
-          "id": "q7",
-          "type": "question",
-          "format": "badges",
-          "question": "Which traveller is your organisation missing most?",
+          "id": "ledger",
+          "type": "ledger",
+          "title": "Trip ledger",
+          "subtitle": "This room's run",
+          "note": "Read out the arrival time and the fuel bill, then the bolts."
+        },
+        {
+          "id": "routes",
+          "type": "routes",
+          "note": "The room's own route is the bright line."
+        },
+        {
+          "id": "habit",
+          "type": "pulse",
+          "question": "Looking at the optimal route, which ONE habit does your team want to bring into its work?",
           "options": [
             {
               "id": "A",
-              "text": "Meera, the data",
-              "persona": "meera"
+              "text": "Choosing clear, real problems before building"
             },
             {
               "id": "B",
-              "text": "Lakshmi, the people",
-              "persona": "lakshmi"
+              "text": "Checking ground reality and keeping tools accessible"
             },
             {
               "id": "C",
-              "text": "Arif, the trust",
-              "persona": "arif"
+              "text": "Protecting people's information and earning trust"
             },
             {
               "id": "D",
-              "text": "Ravi, keeping it running",
-              "persona": "ravi"
+              "text": "Keeping tools documented, shared and easy to maintain"
             }
           ],
-          "core": "No single person or organisation has all four. That's what communities are for: borrowing the traveller you're missing."
+          "resultLine": "The habit this room is taking home."
         },
         {
           "id": "closing",
           "type": "closing",
-          "text": "Nobody gets here alone. Technology helps us travel faster; the people we travel with decide where we go.",
-          "note": "Slow down for this one. End on the last line."
+          "text": "No single formula: move fast where it's simple, pause where it matters, don't play it too safe.",
+          "signoff": "See you on the next convoy.",
+          "note": "Talk it through, one phrase at a time. The full version: We left Bengaluru and arrived at Travancore Palace. The ride shows there's no single formula. Sometimes moving fast and simple wins. Sometimes a short pause to check the ground, protect someone's information or write a few notes saves hours and rupees later. And playing it too safe costs you too. The best route pairs smart tools with human judgement, care and steady upkeep, and we travel it better together. Nobody gets here alone.",
+          "lines": [
+            "No single formula.",
+            "Move fast where it's simple. Pause where it matters.",
+            "Smart tools, human judgement, steady upkeep.",
+            "Nobody gets here alone."
+          ]
         }
       ],
       "chapter": "The gathering"
     }
-  ]
+  ],
+  "routes": {
+    "title": "Three routes",
+    "room": "This room",
+    "list": [
+      {
+        "id": "optimal",
+        "name": "Optimal",
+        "rule": "The best option at each stop",
+        "line": ""
+      },
+      {
+        "id": "shortcut",
+        "name": "Shortcut",
+        "rule": "A shortcut where one exists, smart elsewhere",
+        "line": "Shortcuts saved {saved} along the way and cost {cost} later."
+      },
+      {
+        "id": "over-cautious",
+        "name": "Over-cautious",
+        "rule": "Over-cautious where possible, careful elsewhere",
+        "line": "Never at risk, and never on time."
+      }
+    ],
+    "note": "All three routes are worked out from the options in this file, never typed in."
+  }
 }

@@ -65,9 +65,29 @@ export function route(C, cur, { lobby = false, personaAt = () => "crew", riding 
     .join(sep);
 }
 
-/** The participation fuel gauge. */
-export function fuelGauge(C, pct) {
-  return `<span class="label-sm caps">${esc(C.ui.fuel)}</span>${icon("local_gas_station", "fuel-ic")}<span class="fuel-bar"><i style="width:${pct}%"></i></span><b class="mono-md">${pct}%</b>`;
+/** A loose bolt: a hex nut. */
+export function nut(cls = "") {
+  return `<svg class="nut ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 1.6l9 5.2v10.4l-9 5.2-9-5.2V6.8z" fill="currentColor"/><circle cx="12" cy="12" r="4.2" class="hole"/></svg>`;
+}
+
+/** A small clock face showing `total` minutes after midnight (hands rotate from 12 o'clock; CSS can sweep them). */
+export function clockFace(total, cls = "") {
+  const ticks = Array.from({ length: 12 }, (_, k) => `<line x1="20" y1="${k % 3 ? 4.5 : 3.5}" x2="20" y2="${k % 3 ? 6.5 : 8}" transform="rotate(${k * 30} 20 20)"/>`).join("");
+  return `<svg class="clockface ${cls}" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><circle cx="20" cy="20" r="18" class="face"/><g class="ticks">${ticks}</g><line class="hh" x1="20" y1="20" x2="20" y2="11" style="transform:rotate(${total * 0.5}deg)"/><line class="mh" x1="20" y1="20" x2="20" y2="6" style="transform:rotate(${total * 6}deg)"/><circle cx="20" cy="20" r="2" class="pin"/></svg>`;
+}
+
+/** Effect chips: [{ cls: saved | added | rupees | bolt, text }]. */
+export function chipsHTML(chips, cls = "") {
+  if (!chips?.length) return "";
+  return `<span class="chips ${cls}">${chips.map((c) => `<span class="fx ${esc(c.cls)}">${c.cls === "bolt" ? nut() : ""}${esc(c.text)}</span>`).join("")}</span>`;
+}
+
+/** The DETOUR road sign that swings in beside the road. */
+export function detourSign(text) {
+  return `<svg viewBox="0 0 132 150" aria-hidden="true" focusable="false"><rect x="62" y="56" width="8" height="94" rx="2" fill="#3a3632"/><rect x="58" y="142" width="16" height="8" rx="2" fill="#2a2622"/>
+    <g><rect x="4" y="6" width="124" height="60" rx="8" fill="#f97316" stroke="#1e1b18" stroke-width="4"/><rect x="10" y="12" width="112" height="48" rx="5" fill="none" stroke="#1e1b18" stroke-width="2" opacity=".5"/>
+    <text x="66" y="35" text-anchor="middle" font-family="Poppins, sans-serif" font-weight="700" font-size="20" letter-spacing="1.5" fill="#1e1b18">${esc(text)}</text>
+    <path d="M34 49h58m0 0l-9-7m9 7l-9 7" stroke="#1e1b18" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;
 }
 
 /** One answer with its live result (Stitch option card). badges: a traveller card for Q7. */
@@ -98,3 +118,8 @@ export const clock = (ms) => {
   const s = Math.max(0, Math.ceil((ms || 0) / 1000));
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 };
+
+/** A neutral avatar: a circle in the traveller's colour with their object (no faces). */
+export function avatar(C, pid, cls = "") {
+  return `<span class="avatar ${cls}" data-p="${esc(pid)}" aria-hidden="true">${icon(personaIcon(C, pid))}</span>`;
+}
