@@ -16,17 +16,31 @@ room's pick on the screen) and keeps its place. When the Worker answers again, t
 
 ## The route
 
-Lobby → cold open (6 lines, title card) → Who's riding → Ignition → Stop 1 Bengaluru (websites, guess, Q1,
-cards flip) → Adilabad: forest edge (Q2) and village square (Q3) → petrol pump (skippable) → Nagpur (Q4,
-tokens, Q5, Insight Out) → Jhansi (Q6, pick three) → Travancore Palace (four travellers, Q7, closing).
+Lobby → cold open → Who's riding → Ignition → **Rules** → Stop 1 Bengaluru (the website full screen, guess, reveal, Q1) →
+Adilabad: forest edge (Q2) and village square (Q3) → petrol pump (fuel bill, pulse) → Nagpur (Q4, tokens,
+Insight Out) → Jhansi (Q5) → Travancore Palace (four travellers, trip ledger, three routes, final habit vote,
+closing, sign-off).
 
-Every stop follows ARRIVE → LISTEN → THINK (15 s ring, options hidden) → VOTE (30 s bar) → LOCK →
-REVEAL → HANDOVER → RIDE (3 s, one signboard). `public/js/route.js` turns the content into one ordered list
-of screens, one per beat; the dock's main button always moves to the next one and names it.
+Every stop: ARRIVE → (DETOUR, if a loose bolt breaks here) → LISTEN → THINK (15 s, options hidden) → VOTE →
+LOCK → REVEAL (effect chips + outcome line) → TAKEAWAY → HANDOVER → RIDE.
 
-**Fuel** is the gauge at the bottom right. It starts at 50%; each vote adds (answers ÷ players) × 10%,
-the pump × 20%, capped at 100%. Nothing is lost and nothing is scored. Under 30% turnout the dock shows
-"Low turnout. Ask the room to join."
+**The engine** (`public/js/engine.js`): the arrival clock starts at 6:00 PM (`trip.idealArrival`), the fuel bill
+at ₹2,000 (`trip.baseFuel`). Each option has a `type` (smart / careful / over-cautious / shortcut, hidden from the
+audience until the reveal), `minutes`, `rupees`, an optional `bolt` and an `outcome`. Bolts (`bolts` in en.json)
+break at the start of the stop named in `breaksAt`. The room's choice is the most-voted option; on a tie (or in
+Host mode) the presenter clicks the room's answer on the projector (or presses A–D); the reveal waits for it. The three routes on the ledger are worked out
+from the options, never typed in.
+
+**Backdrops** follow one world (`public/js/scenes.js`): one horizon, ground that meets the road, a verge strip
+per region, one light per scene (rim and shadow on the riders), time of day from dawn to evening lights, one
+grade, darker when the room is running late, far/near layers with parallax.
+
+## Office Wi-Fi (no Cloudflare account needed)
+
+`npm run lan` keeps the Live server up on port 8787 for everyone on the same Wi-Fi: it restarts the server if it
+stops or hangs, and writes the laptop's current address to `public/lan.json`, which the projector's QR code follows.
+Open the projector at **http://localhost:8787/** on the laptop; phones scan the QR code. On this laptop it runs as a
+user service (`systemctl --user status|restart|stop the-ride`, logs: `journalctl --user -u the-ride -f`).
 
 ## 1. Deploy for the session
 
@@ -108,12 +122,12 @@ Design: the Google Stitch export in design/stitch/ is the visual source of truth
 fixed 16:9 stage on Stitch's 1440×810 grid, scaled to the screen (1920×1080 on a 1080p projector).
 
 Fonts (SIL Open Font License, bundled): Playfair, Poppins, Red Hat Mono. Icons: Material Symbols
-(Apache 2.0), inlined as SVG. Riders and bikes are the Stitch SVG. The showcase screenshots were
-captured from the public sites; Holématthi is embedded live when the projector is Live and online
-(hakki.photos forbids embedding, so it always shows its screenshot).
+(Apache 2.0), inlined as SVG. Riders and bikes are the Stitch SVG. Stop 1 shows one website, Hakki: hakki.photos forbids embedding, so the
+game shows a full-page screenshot (img/showcase-hakki-full.jpg) that the presenter scrolls with the wheel or ↓ ↑.
 
 Backdrops: drawn as layered SVG by `tools/backdrops.mjs` (sources in design/backdrops/) and rendered to
 WebP in public/img/scenes/ with sharp: `npm run backdrops` (or `npm run backdrops -- forest` for one).
 One per place (prologue, workbench, forest, village, pump, records, bridge, palace, at 1920×1080) and one
-seamless 3840×1080 road panorama per leg (road-1 … road-4), which pans while the convoy rides.
+seamless 3840×1080 road panorama per leg (road-1 … road-4), each rendered as `<name>-far.webp` and
+`<name>-near.webp` for parallax.
 config.backdrops in en.json maps each to its file. The earlier Stitch images are in public/img/scenes/_old/.
