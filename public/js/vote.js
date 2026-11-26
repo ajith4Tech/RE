@@ -6,6 +6,7 @@
 import { buildScreens, phaseOf, stepOf, stopOf, placeOf, isVoteStep, filled, fmt, esc } from "./route.js";
 import { icon } from "./icons.js";
 import { pill, personaIcon, stopPersona, questionOf, clock } from "./ui.js";
+import { movesClock, optionOf, effectPhrase, clockText } from "./engine.js";
 
 const $ = (s) => document.querySelector(s);
 const app = $("#app");
@@ -108,7 +109,7 @@ function render(force) {
     return;
   }
   const mem = memory();
-  const key = JSON.stringify([state.slot, ph, state.round, mem.v, sending, notice, picks]);
+  const key = JSON.stringify([state.slot, ph, state.round, state.pick, mem.v, sending, notice, picks]);
   if (key === renderedKey && !force) return side();
   renderedKey = key;
 
@@ -133,8 +134,25 @@ function render(force) {
     case "card":
       return (app.innerHTML = `${card("visibility", P("lookUp"))}${filled(step.link) ? `<a class="v-link label-lg" href="${esc(step.link)}" target="_blank" rel="noopener">${icon("open_in_new")}${esc(P("openLink"))}</a>` : ""}`);
     case "closing": return (app.innerHTML = card("flag", step.text));
+    case "signoff": return (app.innerHTML = card("flag", step.signoff));
+    case "rules": return (app.innerHTML = card("route", P("rules", { time: clockText(C, 0) })));
+    case "dash": return (app.innerHTML = card("local_gas_station", P("lookAtFuel")));
+    case "ledger": case "routes": return (app.innerHTML = card("route", P("lookAtLedger")));
+    case "detour": {
+      // A loose bolt broke: the cost, straight away
+      const b = C.bolts[s.bolt];
+      return (app.innerHTML = card("bolt", P("detour"), P("detourCost", { effects: effectPhrase(C, { minutes: b.minutes, rupees: b.rupees }) }), "detour"));
+    }
     case "think": return (app.innerHTML = `${qHead(step)}${card("hourglass_top", P("think"), "", "quiet waiting")}`);
-    case "reveal": return (app.innerHTML = `${qHead(step)}${card("visibility", P("reveal"))}`);
+    case "reveal": case "takeaway": {
+      // After the reveal: the room's choice and its effect ("Room chose B: −30 min, bolt planted")
+      const q = s.beat === "takeaway" ? [...stop.steps.slice(0, stop.steps.indexOf(step))].reverse().find((x) => isVoteStep(x)) : step;
+      const o = movesClock(q) && state.pick ? optionOf(q, state.pick) : null;
+      const yours = mem.v !== undefined && q?.id === state.slot ? `<p class="body-md muted v-yours">${esc(P("yourPick", { answer: q.options.find((x) => x.id === mem.v)?.text || "" }))}</p>` : "";
+      if (s.beat === "takeaway") return (app.innerHTML = `${card("menu_book", step.text, o ? P("roomChose", { id: o.id, effects: effectPhrase(C, o) }) : "")}`);
+      if (o) return (app.innerHTML = `${qHead(step)}${card(o.bolt ? "bolt" : "check", P("roomChose", { id: o.id, effects: effectPhrase(C, o) }), o.outcome, o.bolt ? "bolted" : "")}${yours}`);
+      return (app.innerHTML = `${qHead(step)}${card("visibility", P("reveal"))}`);
+    }
   }
   if (isVoteStep(step)) return voteScreen(step, ph, mem);
   app.innerHTML = card("visibility", P("lookUp"));

@@ -62,3 +62,8 @@ main { flex: 1; display: flex; flex-direction: column; justify-content: center; 
 .v-alert { padding: var(--g-md); border-radius: var(--r-md); background: var(--l-error-container); color: var(--l-on-error-container); }
 
 .v-foot { padding-top: var(--g-sm); border-top: 1px solid var(--l-outline-variant); display: flex; align-items: center; justify-content: space-between; color: var(--l-on-surface-variant); }
+
+/* The trip: a detour, and the room's choice when it planted a bolt */
+.v-card.detour { background: #fff1e6; border-color: #f97316; }
+.v-card.detour .badge, .v-card.bolted .badge { background: #c2410c; color: #fff; }
+.v-yours { text-align: center; }
