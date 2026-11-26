@@ -12,7 +12,8 @@
     "test:host": "node tests/shots.mjs",
     "test:live": "node tests/run.mjs",
     "test:fallback": "node tests/fallback.mjs",
-    "backdrops": "node tools/backdrops.mjs"
+    "backdrops": "node tools/backdrops.mjs",
+    "lan": "node tools/lan.mjs"
   },
   "devDependencies": {
     "playwright": "^1.65.1",
