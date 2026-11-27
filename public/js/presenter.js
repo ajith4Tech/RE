@@ -654,8 +654,10 @@ function routesHTML(s) {
 }
 function insightHTML(step) {
   const link = filled(step.link) ? step.link : "";
+  const title = esc(step.title || "");
+  const highlightedTitle = title.replace("Insight Out", '<mark class="ins-highlight">Insight Out</mark>');
   return `<div class="card insight" data-p="crew">
-    <div class="ins-main"><span class="mono-md caps pcb">Insight Out</span><h1 class="display-lg balance">${esc(step.title)}</h1><p class="ins-text pretty">${esc(step.text)}</p></div>
+    <div class="ins-main"><span class="mono-md caps pcb">Insight Out</span><h1 class="display-lg balance">${highlightedTitle}</h1><p class="ins-text pretty">${esc(step.text)}</p></div>
     ${link ? `<div class="ins-link"><div class="qr-box" data-qr="${esc(link)}"></div><span class="mono-lg">${esc(link.replace(/^https?:\/\//, ""))}</span></div>` : ""}
   </div>`;
 }
@@ -1669,7 +1671,12 @@ function applyServerState(st) {
   if (!st || !live.on) return;
   if (st.round !== S.round) {
     S.round = st.round;
+    S.closed = {};
+    S.final = {};
     S.tallies = {};
+    S.manual = {};
+    S.vote = { slot: null };
+    S.think = { key: null };
   }
   // Tallies only for the step on screen, and only until its votes lock
   if (st.tally && st.slot === scr().slot && !S.final[st.slot]) S.tallies[st.slot] = st.tally;

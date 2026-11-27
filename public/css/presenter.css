@@ -397,7 +397,7 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 [data-beat="takeaway"] .card.stop { max-width: 1040px; justify-self: center; }
 [data-beat="takeaway"] [data-head] { font: 700 36px/46px var(--f-display); }
 
-/* Loose bolts on the bikes: a gentle wobble; a broken one falls off */
+/* ---------------------------------------------------------------- Loose bolts and detours */
 .bolts { position: absolute; left: 36%; top: 30%; display: flex; gap: 4px; }
 .boltb { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fed7aa; background: #c2410c; border: 2px solid #fdba74; box-shadow: 0 0 14px rgb(251 138 90 / .65); animation: wobble 1.7s ease-in-out infinite; }
 .boltb .nut { width: 16px; height: 16px; }
@@ -409,7 +409,6 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 @keyframes boltfall { 0% { transform: none; } 18% { transform: translateY(-10px) rotate(-30deg); } 100% { transform: translate(-36px, 90px) rotate(-300deg); opacity: 0; } }
 .nut.wobble { color: #fb8a5a; animation: wobble 1.7s ease-in-out infinite; }
 
-/* A detour: the convoy stops with a jolt and the sign swings in */
 #detour { position: absolute; left: 0; bottom: -6px; width: 132px; height: 150px; transform: translateX(var(--x, 1100px)); opacity: 0; pointer-events: none; transition: opacity 300ms; }
 #detour.on { opacity: 1; }
 #detour svg { width: 100%; height: 100%; display: block; transform-origin: 50% 100%; filter: drop-shadow(calc(var(--lx, 0) * 2px) -2px 1px color-mix(in srgb, var(--light, #fff) 60%, transparent)); }
@@ -433,24 +432,31 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .card.detour .msg { font: 600 28px/38px var(--f-display); color: var(--d-on-surface); }
 .card.detour .pill .nut { font-size: 16px; }
 
-/* ---------------------------------------------------------------- petrol pump: the bill, large */
-.card.dash-card { display: flex; flex-direction: column; gap: var(--g-lg); }
-.readouts { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: var(--g-md); }
-.readout { display: flex; align-items: center; gap: var(--g-md); padding: var(--g-md) var(--g-lg); border-radius: var(--r-xl); background: var(--d-surface-container); border: 1px solid var(--d-outline-variant); }
+/* ---------------------------------------------------------------- petrol pump */
+.card.dash-card { display: flex; flex-direction: column; gap: var(--g-lg); max-width: 1000px; justify-self: center; align-items: center; padding: var(--section) var(--g-xl); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: var(--g-md); width: 100%; }
+.readouts.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.readout { display: flex; align-items: center; justify-content: center; gap: var(--g-md); padding: var(--g-lg); border-radius: var(--r-xl); background: var(--d-surface-container); border: 1px solid var(--d-outline-variant); }
 .readout > div { display: flex; flex-direction: column; gap: 2px; }
 .readout b { font-weight: 700; color: var(--meera-bright); }
 .readout.late b { color: var(--lakshmi-bright); }
 .readout:nth-child(2) b { color: var(--d-on-surface); }
 .readout .big-clock { width: 72px; height: 72px; }
 .readout .big-ic { font-size: 56px; color: var(--lakshmi-bright); }
+.card.dash-card .readout { justify-content: center; }
+.card.dash-card .prompt { font: 600 34px/44px var(--f-display); color: var(--d-on-surface); text-align: center; }
+.card.dash-card .line { color: var(--pc-bright); font: 500 20px/28px var(--f-ui); }
+.readout .big-nut { width: 52px; height: 52px; color: #fb8a5a; }
 .bolts-box { flex-direction: column; align-items: flex-start; gap: var(--g-sm); }
 .bolt-list { display: flex; flex-direction: column; gap: var(--g-sm); }
 .bolt-list li { display: flex; align-items: center; flex-wrap: wrap; gap: var(--g-sm); }
 .bolt-list li > .nut { font-size: 18px; color: #fb8a5a; }
 .bolt-list li.broken > .nut { color: var(--d-outline); }
+.breakdown { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); align-items: center; gap: var(--g-md); padding: var(--g-sm) var(--g-lg); border-radius: var(--r-lg); background: var(--d-surface-low); border: 1px solid var(--d-outline-variant); }
+.bd-cell { display: flex; flex-direction: column; gap: 4px; }
 
-/* ---------------------------------------------------------------- the trip ledger and the three routes */
-.card.ledger, .card.routes { display: flex; flex-direction: column; gap: var(--g-md); padding: var(--g-lg) var(--g-xl); }
+/* ---------------------------------------------------------------- the trip ledger and routes */
+.card.ledger, .card.routes { display: flex; flex-direction: column; gap: var(--g-sm); padding: var(--g-md) var(--g-xl); }
 .ledger-head { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: var(--g-lg); align-items: end; }
 .ledger-head > div { display: flex; flex-direction: column; gap: 2px; }
 .ledger-head .ok { color: var(--meera-bright); }
@@ -462,7 +468,7 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .ledger-rows .where { display: inline-flex; align-items: center; gap: 6px; }
 .ledger-rows li.broke .where { color: #fb923c; }
 .ledger-rows .what b { color: var(--pc-bright); margin-right: 4px; }
-.route-chart { width: 100%; height: auto; display: block; }
+.route-chart { width: 100%; max-height: 210px; height: auto; display: block; }
 .route-chart .axis { font: 500 13px var(--f-mono); fill: var(--d-on-surface-variant); }
 .route-chart .tick { stroke: var(--d-outline-variant); stroke-dasharray: 2 4; }
 .route-chart .ideal { stroke: var(--d-outline); stroke-dasharray: 6 6; }
@@ -476,24 +482,33 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .rt.over-cautious { stroke: var(--arif-bright); } .rt-end.over-cautious, .route-card.over-cautious .nm { fill: var(--arif-bright); color: var(--arif-bright); }
 .rt.room { stroke: #fff8ec; } .rt-end.room { fill: #fff8ec; font-weight: 700; }
 .rt-end { font: 600 14px var(--f-mono); }
-.route-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--g-md); }
-.route-card { position: relative; display: flex; flex-direction: column; gap: 2px; padding: var(--g-sm) var(--g-md); border-radius: var(--r-lg); background: var(--d-surface-container); border: 1px solid var(--d-outline-variant); }
+.route-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--g-sm); }
+.route-card { position: relative; display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 0 var(--g-md); padding: 6px var(--g-md); border-radius: var(--r-lg); background: var(--d-surface-container); border: 1px solid var(--d-outline-variant); }
+.route-card .nm, .route-card p { grid-column: 1 / -1; }
 .route-card .mono-md { color: var(--d-on-surface-variant); }
-.route-card p { margin-top: 4px; color: var(--d-on-surface); }
-.route-card.is-room { border: 2px solid #fff8ec; box-shadow: 0 0 20px -4px rgb(255 255 255 / .4); }
+.route-card p { margin-top: 0; font-size: 13px; line-height: 18px; color: var(--d-on-surface-variant); }
+.route-card.is-room { border: 2px solid #fff8ec; box-shadow: 0 0 20px -4px rgb(255 255 255 / .4); padding: 5px calc(var(--g-md) - 1px); }
+.route-card b.headline-lg { font-size: 26px; line-height: 32px; }
 .room-tag { position: absolute; top: var(--g-sm); right: var(--g-md); color: #fff8ec; }
 .room-key { display: inline-flex; align-items: center; gap: var(--g-sm); color: #fff8ec; }
 .room-key i { width: 28px; height: 6px; border-radius: 3px; background: #fff8ec; box-shadow: 0 0 6px rgb(255 255 255 / .5); }
+#main:has(.card.routes), #main:has(.card.ledger) { align-items: start; padding-top: var(--g-sm); }
+.card.routes .headline-lg { font-size: 28px; line-height: 34px; }
 
-/* ---------------------------------------------------------------- the gathering, closing, sign-off */
+/* ---------------------------------------------------------------- gathering, closing, sign-off */
 .card.gather .opt.trav .t { color: var(--d-on-surface); font-family: var(--f-display); }
 .card.gather .opt.trav { animation: rise 500ms var(--glide-ease) both; }
-.card.gather .opt.trav:nth-child(2) { animation-delay: .3s; } .card.gather .opt.trav:nth-child(3) { animation-delay: .6s; } .card.gather .opt.trav:nth-child(4) { animation-delay: .9s; }
+.card.gather .opt.trav:nth-child(2) { animation-delay: .3s; }
+.card.gather .opt.trav:nth-child(3) { animation-delay: .6s; }
+.card.gather .opt.trav:nth-child(4) { animation-delay: .9s; }
 .card.closing { max-width: 1100px; }
 .closing-text { font: 500 24px/36px var(--f-ui); color: var(--d-on-surface); text-align: left; }
 .card.signoff h1 { color: var(--crew-bright); }
+.closing-lines { display: flex; flex-direction: column; align-items: center; gap: var(--g-md); text-align: center; }
+.closing-lines li { font: 600 32px/42px var(--f-display); color: var(--d-on-surface); animation: rise 600ms var(--glide-ease) both; animation-delay: calc(var(--k) * 500ms + 200ms); }
+.closing-lines li.last { color: var(--crew-bright); font-size: 38px; line-height: 48px; margin-top: var(--g-sm); }
 
-/* ---------------------------------------------------------------- Insight Out: large, on its own */
+/* ---------------------------------------------------------------- Insight Out */
 .card.insight { display: flex; align-items: center; gap: var(--section); max-width: 1180px; justify-self: center; padding: var(--section); border-color: color-mix(in srgb, var(--crew-bright) 55%, transparent); }
 .ins-main { flex: 1; display: flex; flex-direction: column; gap: var(--g-md); }
 .ins-main .mono-md { letter-spacing: 2px; }
@@ -503,28 +518,10 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .ins-link .qr-box { width: 220px; height: 220px; }
 .ins-link .mono-lg { color: var(--crew-bright); }
 
-/* The routes and the ledger: compact, held at the top of the space above the road */
-#main:has(.card.routes), #main:has(.card.ledger) { align-items: start; padding-top: var(--g-sm); }
-.card.routes, .card.ledger { transform-origin: top center; gap: var(--g-sm); padding: var(--g-md) var(--g-xl); }
-.card.routes .headline-lg { font-size: 28px; line-height: 34px; }
-.route-chart { max-height: 210px; }
-.route-cards { gap: var(--g-sm); }
-.route-card { padding: 6px var(--g-md); display: grid; grid-template-columns: auto 1fr; align-items: baseline; column-gap: var(--g-md); row-gap: 0; }
-.route-card .nm { grid-column: 1 / -1; }
-.route-card b.headline-lg { font-size: 26px; line-height: 32px; }
-.route-card p { grid-column: 1 / -1; margin-top: 0; font-size: 13px; line-height: 18px; color: var(--d-on-surface-variant); }
-.route-card.is-room { padding: 5px calc(var(--g-md) - 1px); }
-
-/* The closing: a few phrases, large, arriving one after another */
-.closing-lines { display: flex; flex-direction: column; align-items: center; gap: var(--g-md); text-align: center; }
-.closing-lines li { font: 600 32px/42px var(--f-display); color: var(--d-on-surface); animation: rise 600ms var(--glide-ease) both; animation-delay: calc(var(--k) * 500ms + 200ms); }
-.closing-lines li.last { color: var(--crew-bright); font-size: 38px; line-height: 48px; margin-top: var(--g-sm); }
-
 /* ---------------------------------------------------------------- cold open: four cards, turned one by one */
 .card.coldcards { display: flex; flex-direction: column; align-items: center; gap: var(--g-md); padding: var(--g-lg); background: rgb(30 27 24 / .72); }
 .cc-grid { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--g-md); perspective: 1400px; }
 .cc { position: relative; transition: opacity 500ms ease, filter 500ms ease; }
-/* Spotlight while a card turns: the rest of the scene falls back */
 .coldcards.focus .cc:not(.just) { opacity: .35; filter: saturate(.3); }
 .coldcards.focus .cc-final { opacity: 0; }
 .cc-in { position: relative; display: grid; min-height: 330px; transition: transform 1200ms cubic-bezier(.34, 1.4, .5, 1); transform-style: preserve-3d; }
@@ -535,7 +532,6 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 @keyframes ccglow { 0% { box-shadow: 0 0 0 0 transparent; } 35% { box-shadow: 0 0 60px 8px color-mix(in srgb, var(--pc-bright) 55%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .cc.just .cc-line { animation: hook 900ms 700ms var(--glide-ease) both; }
 @keyframes hook { from { opacity: 0; transform: scale(1.25); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
-/* Both faces share one layout: avatar, name, role (or place), then the hook */
 .cc-face { grid-area: 1 / 1; padding: var(--g-lg) var(--g-md); border-radius: var(--r-xl); backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; text-align: center; }
 .cc-av { width: 72px; height: 72px; font-size: 34px; margin-bottom: var(--g-xs); }
 .cc-name { font: 700 30px/36px var(--f-display); color: var(--d-on-surface); }
@@ -549,33 +545,24 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .cc-bars i:last-child { width: 60%; align-self: center; }
 .cc.next .cc-front { animation: ccwait 2.2s ease-in-out infinite; }
 @keyframes ccwait { 50% { border-color: var(--d-outline); box-shadow: 0 0 28px -6px rgb(255 255 255 / .3); } }
-/* At rest the turned card is calm: plain dark, a thin border in their colour; the colour flashes only as it turns */
 .cc-back { transform: rotateY(180deg); justify-content: center; background: var(--d-surface-container); border: 1.5px solid color-mix(in srgb, var(--pc-bright) 75%, transparent); }
 .cc-line { margin-top: var(--g-md); font: 600 24px/32px var(--f-display); color: #fff8ec; }
 .avatar { display: inline-grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--pc); color: var(--pc-on); font-size: 28px; }
 .cc-final { font: 600 30px/40px var(--f-display); text-align: center; color: var(--crew-bright); opacity: 0; transform: translateY(8px); transition: opacity 800ms ease, transform 800ms var(--glide-ease); }
 .cc-final.on { opacity: 1; transform: none; }
 
-/* ---------------------------------------------------------------- petrol pump: reflect on time, fuel and bolts */
-.breakdown { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); align-items: center; gap: var(--g-md); padding: var(--g-sm) var(--g-lg); border-radius: var(--r-lg); background: var(--d-surface-low); border: 1px solid var(--d-outline-variant); }
-.bd-cell { display: flex; flex-direction: column; gap: 4px; }
-.card.dash-card .prompt { color: var(--d-on-surface); font-family: var(--f-display); font-size: 30px; line-height: 40px; }
-.card.dash-card .line { color: var(--pc-bright); font: 500 20px/28px var(--f-ui); }
-.card.dash-card { gap: var(--g-md); }
-
-/* The line after the cards, on its own: the four travellers, then the line */
+/* ---------------------------------------------------------------- the line after the cards */
 .card.coldline { gap: var(--g-md); padding: var(--g-xl) var(--section); }
 .cl-row { display: flex; justify-content: center; gap: var(--section); }
 .cl-who { display: flex; flex-direction: column; align-items: center; gap: var(--g-sm); color: var(--d-on-surface); animation: rise 600ms var(--glide-ease) both; animation-delay: calc(var(--k) * 180ms); }
 .cl-av { width: 72px; height: 72px; font-size: 36px; }
 .cl-line { font: 700 40px/50px var(--f-display); color: #fff8ec; max-width: 1000px; animation: rise 900ms 900ms var(--glide-ease) both; }
-/* The room's part: warm, bright and last, so it lands as the point of the whole ride */
 .cl-you { font: 800 52px/62px var(--f-display); max-width: 1100px; color: #fff8ec; filter: drop-shadow(0 0 22px rgb(255 248 236 / .35)); animation: youin 1100ms 1900ms var(--glide-ease) both; }
 @keyframes youin { 0% { opacity: 0; transform: scale(1.18); filter: blur(6px); } 60% { opacity: 1; transform: scale(.98); filter: drop-shadow(0 0 30px rgb(255 248 236 / .6)); } 100% { transform: none; filter: drop-shadow(0 0 22px rgb(255 248 236 / .35)); } }
 .cl-cue { display: inline-flex; align-items: center; gap: var(--g-sm); padding: var(--g-xs) var(--g-lg); border-radius: var(--r-full); background: rgb(255 248 236 / .1); border: 1px solid rgb(255 248 236 / .5); color: #fff8ec; animation: rise 700ms 2900ms var(--glide-ease) both; }
 .cl-cue .ic { font-size: 20px; }
 
-/* ---------------------------------------------------------------- Stop 1: one website */
+/* ---------------------------------------------------------------- Stop 1: website */
 .sites.one { grid-template-columns: minmax(0, 1fr); }
 .sites.big.one { max-width: 760px; width: 100%; justify-self: center; align-self: center; }
 .sites.big.one .frame { height: 300px; }
@@ -583,33 +570,46 @@ html, body { height: 100%; overflow: hidden; background: #000; }
 .card.sites-look .site:hover { transform: translateY(-3px); }
 .card.sites-look .col-main { align-items: center; }
 
-/* The website in the foreground: over the whole stage, scrollable like a browser */
-#stage.focus-site #main { position: absolute; inset: 76px 72px 20px; z-index: 6; padding: 0; display: block; }
+/* Foreground website: independent of, and never participating in, the bottom road layout */
+#stage.focus-site #road {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 264px;
+  z-index: 3;
+}
+#stage.focus-site #hud { z-index: 4; }
+#stage.focus-site #main {
+  position: absolute;
+  left: 72px;
+  right: 72px;
+  top: 84px;
+  bottom: 264px;
+  z-index: 5;
+  padding: 0;
+  display: block;
+}
 #stage.focus-site #main > .layer { height: 100%; }
-.card.site-focus { height: 100%; display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; border-color: var(--crew-bright); box-shadow: 0 30px 120px 30px rgb(0 0 0 / .6); animation: sfin 700ms var(--glide-ease) both; }
+.card.site-focus {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--crew-bright);
+  box-shadow: 0 30px 120px 30px rgb(0 0 0 / .6);
+  animation: sfin 700ms var(--glide-ease) both;
+}
 @keyframes sfin { from { transform: scale(.6) translateY(40px); opacity: 0; } }
-.sf-bar { display: flex; align-items: center; gap: var(--g-md); padding: var(--g-sm) var(--g-md); background: var(--d-surface-high); border-bottom: 1px solid var(--d-outline-variant); }
+.sf-bar { flex: none; display: flex; align-items: center; gap: var(--g-md); padding: var(--g-sm) var(--g-md); background: var(--d-surface-high); border-bottom: 1px solid var(--d-outline-variant); }
 .sf-dots { display: flex; gap: 6px; }
 .sf-dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--d-outline); }
 .sf-dots i:nth-child(1) { background: #f87171; } .sf-dots i:nth-child(2) { background: #fbbf24; } .sf-dots i:nth-child(3) { background: #4ade80; }
 .sf-url { flex: 1; display: inline-flex; align-items: center; gap: 6px; padding: 4px var(--g-md); border-radius: var(--r-full); background: var(--d-surface-lowest); color: var(--d-on-surface); }
-.sf-scroll { flex: 1; overflow-y: auto; background: #faf7f2; scrollbar-width: thin; }
+.sf-scroll { flex: 1; min-height: 0; overflow-y: auto; background: #faf7f2; scrollbar-width: thin; }
 .sf-scroll img { display: block; width: 100%; height: auto; }
-
-/* Petrol pump: two (or three) big numbers and one question */
-.card.dash-card { max-width: 1000px; justify-self: center; align-items: center; gap: var(--g-xl); padding: var(--section) var(--g-xl); }
-.card.dash-card .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
-.card.dash-card .readouts.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.card.dash-card .readout { justify-content: center; padding: var(--g-lg); }
-.card.dash-card .prompt { font: 600 34px/44px var(--f-display); color: var(--d-on-surface); text-align: center; }
-.readout .big-nut { width: 52px; height: 52px; color: #fb8a5a; }
-
-/* Each traveller's role, highlighted: a bold pill in their colour, the thing to remember them by */
-.cc-tag { max-width: 100%; text-align: center; margin-top: 2px; padding: 4px 14px; border-radius: var(--r-full); background: color-mix(in srgb, var(--pc-bright) 16%, transparent); border: 1px solid color-mix(in srgb, var(--pc-bright) 60%, transparent); color: var(--pc-bright); font: 600 16px/22px var(--f-ui); }
-.cc.just .cc-tag { animation: chipin 600ms 500ms var(--glide-ease) both; }
-.cc-tag.sm { margin-top: 2px; padding: 3px 12px; font-size: 14px; line-height: 18px; }
-.cl-row { gap: var(--g-xl); }
-.cl-who { max-width: 220px; text-align: center; }
 
 /* Lobby: the title and line sit on the game's dark card, readable on any sky */
 .lobby-l { padding: var(--g-xl); border-radius: var(--r-xl); background: rgb(30 27 24 / .86); border: 1px solid var(--d-outline-variant); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 24px 140px 56px rgb(12 10 8 / .38); }

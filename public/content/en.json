@@ -160,7 +160,7 @@
   "crew": {
     "label": "Leading the ride",
     "title": "Tech4Good Community",
-    "line": "A community of builders who help social-impact organisations use technology with care, and build it themselves.",
+    "line": "A community that helps nonprofits and social enterprises build, adopt, and maintain sustainable technology",
     "facts": [
       "PLACEHOLDER: first fact about Tech4Good Community",
       "PLACEHOLDER: second fact about Tech4Good Community",
@@ -265,37 +265,45 @@
   },
   "bolts": {
     "bolt1": {
-      "label": "Alert sent only to the three villages",
+      "label": "Alerted all three villages",
       "persona": "meera",
       "breaksAt": "adilabadB",
       "minutes": 90,
       "rupees": 800,
-      "message": "Remember the alert sent straight to the three villages? Those were simply the villages with mobile signal. The real hotspot had no reports, and cattle were lost there last night."
+      "message": "The three villages simply had mobile signal. The real hotspot had no reports."
     },
     "bolt2": {
-      "label": "An alert app launched in a week",
+      "label": "Texted all 300 numbers",
       "persona": "lakshmi",
       "breaksAt": "pump",
       "minutes": 60,
       "rupees": 700,
-      "message": "The alert app? Half the families couldn't install it, and the rest lost signal after dark. We turn back to set up voice calls."
+      "message": "Many couldn't read the text, and the rest got it after dark."
     },
     "bolt3": {
-      "label": "Records uploaded with only names removed",
+      "label": "Shared full records with names removed",
       "persona": "arif",
       "breaksAt": "jhansi",
       "minutes": 90,
       "rupees": 700,
-      "message": "Remember uploading the records without names? Age, village and diagnosis together pointed to one mother. Her family found out from a report. We stop to repair the damage and the trust."
+      "message": "Age, village and pregnancy were enough. One mother was recognised."
     },
-    "bolt4": {
-      "label": "Launched before the notes were written",
-      "persona": "ravi",
-      "breaksAt": "palace",
-      "minutes": 45,
-      "rupees": 500,
-      "message": "The tool stopped working on the way in, and the notes were never written. Nobody can log in."
-    }
+    "bolt4a": {
+  "label": "Handed hosting to a vendor",
+  "persona": "ravi",
+  "breaksAt": "palace",
+  "minutes": 45,
+  "rupees": 500,
+  "message": "The vendor contract ran out—and nobody else had the keys."
+},
+"bolt4b": {
+  "label": "Used free hosting",
+  "persona": "ravi",
+  "breaksAt": "palace",
+  "minutes": 45,
+  "rupees": 500,
+  "message": "The free tier hit its limit—and nobody else had the keys."
+}
   },
   "stops": [
     {
@@ -333,58 +341,66 @@
         {
           "id": "guess",
           "type": "guess",
-          "question": "Who do you think built this?",
+          "question": "Who do you think built Hakki?",
           "options": [
             {
               "id": "A",
-              "text": "A web agency"
+              "text": "A bird photographer who knows some coding"
             },
             {
               "id": "B",
-              "text": "An experienced developer"
+              "text": "A freelance designer using AI"
             },
             {
               "id": "C",
-              "text": "A small tech team"
+              "text": "A small web development team"
             },
             {
               "id": "D",
-              "text": "Someone with no coding background, using AI"
+              "text": "A finance professional"
             }
           ],
           "note": "A quick guess, not a question. Lock it, then reveal who built them.",
           "reveal": true,
           "revealSites": true,
-          "revealNote": "No development team built it. The hard part has moved from writing code to choosing the right problem."
+          "revealNote": "It was built by a finance professional — using AI."
         },
         {
           "id": "q1",
           "type": "question",
-          "question": "We could build something with AI this weekend. How do we start?",
+          "question": "If We have an idea and AI to build it. Where do we start?",
           "options": [
             {
               "id": "A",
-              "text": "Build a rough version this weekend to test one idea",
+              "text": "Build a rough version this weekend",
               "type": "smart",
               "minutes": -30,
-              "rupees": 200,
-              "outcome": "Off to a flying start. Something real on the screen gets real feedback fast."
+              "rupees": 0,
+              "outcome": "Smart · −30 min"
             },
             {
               "id": "B",
-              "text": "Pick one real problem first, then build a small test",
+              "text": "Define the one problem it solves",
               "type": "careful",
               "minutes": 15,
-              "rupees": 100,
-              "outcome": "A short pause to name the problem. Now we know exactly what we're looking for."
+              "rupees": 0,
+              "outcome": "Careful · +15 min"
             },
             {
               "id": "C",
-              "text": "Spend weeks mapping every feature and stakeholder first",
+              "text": "Check if a tool already exists",
+              "type": "careful",
+              "minutes": 15,
+              "rupees": 0,
+              "outcome": "Careful · +15 min"
+            },
+            {
+              "id": "D",
+              "text": "Plan every feature first",
               "type": "over-cautious",
               "minutes": 60,
               "rupees": 500,
-              "outcome": "Still at the workbench while the road waits. Planning for weeks before touching anything burns time and energy."
+              "outcome": "Over-cautious · +1 hr · +₹500"
             }
           ]
         },
@@ -394,7 +410,7 @@
           "text": "AI makes trying things cheap. Knowing which problem you're trying to solve keeps it useful."
         }
       ],
-      "handover": "If the hard part is the problem, let's go where the problems are."
+      "handover": "Let's go where the problems are."
     },
     {
       "id": "adilabadA",
@@ -410,41 +426,41 @@
         {
           "id": "q2",
           "type": "question",
-          "context": "AI studies her data and points to three villages.",
-          "question": "AI points to three villages. What's our move?",
+          "context": "AI says three villages are at risk tonight.",
+          "question": "What do I do?",
           "options": [
             {
               "id": "A",
-              "text": "Send the alert to those three villages tonight",
+              "text": "Alert all three now",
               "type": "shortcut",
               "minutes": -30,
               "rupees": 0,
               "bolt": "bolt1",
-              "outcome": "Alert sent, 30 minutes saved. For now. Keep an eye on that bolt."
+              "outcome": "Shortcut · −30 min · Bolt 1"
             },
             {
               "id": "B",
-              "text": "Go through Meera's field notes and the quiet, unrecorded areas first",
-              "type": "careful",
-              "minutes": 30,
-              "rupees": 200,
-              "outcome": "Meera spots it: two villages barely appear in the records. The alert goes where it's needed."
-            },
-            {
-              "id": "C",
-              "text": "Quick check-in with the three villages and two low-signal neighbours",
+              "text": "Ask rangers which villages the data missed",
               "type": "smart",
               "minutes": 15,
               "rupees": 150,
-              "outcome": "Fast and grounded. The quick check-in turns up a missed hotspot next door."
+              "outcome": "Smart · +15 min · +₹150"
+            },
+            {
+              "id": "C",
+              "text": "Cross-check with the forest guards' map",
+              "type": "careful",
+              "minutes": 30,
+              "rupees": 200,
+              "outcome": "Careful · +30 min · +₹200"
             },
             {
               "id": "D",
-              "text": "Set the AI aside and stick to the old paper logs",
+              "text": "Wait for an expert to verify",
               "type": "over-cautious",
               "minutes": 60,
               "rupees": 500,
-              "outcome": "Safe, but slow. Hours of useful pattern-spotting left on the table."
+              "outcome": "Over-cautious · +1 hr · +₹500"
             }
           ]
         },
@@ -471,40 +487,40 @@
         {
           "id": "q3",
           "type": "question",
-          "question": "How do we get the warning to these families?",
+          "question": "300 families, before dark. Basic phones, many can't read. How do I warn them?",
           "options": [
             {
               "id": "A",
-              "text": "Voice messages through channels families already use",
+              "text": "An automated voice call in the local language",
               "type": "smart",
               "minutes": -15,
               "rupees": 150,
-              "outcome": "Fast because it fits: familiar voices on the phones people already have."
+              "outcome": "Smart · −15 min · +₹150"
             },
             {
               "id": "B",
-              "text": "Launch an alert app this week",
+              "text": "A text to all 300 numbers",
               "type": "shortcut",
               "minutes": -30,
               "rupees": 0,
               "bolt": "bolt2",
-              "outcome": "The app is live, 30 minutes saved. Do you hear that rattle?"
+              "outcome": "Shortcut · −30 min · Bolt 2"
             },
             {
               "id": "C",
-              "text": "Test voice messages with 10 families first, in their own dialect",
+              "text": "Through the village heads",
               "type": "careful",
               "minutes": 30,
               "rupees": 200,
-              "outcome": "Ten families later, Lakshmi knows the words that land and the time of day people pick up."
+              "outcome": "Careful · +30 min · +₹200"
             },
             {
               "id": "D",
-              "text": "Survey all 300 families before sending anything",
+              "text": "Volunteers door to door",
               "type": "over-cautious",
               "minutes": 90,
               "rupees": 600,
-              "outcome": "A thorough survey, while the warning waits. Sometimes over-studying is its own risk."
+              "outcome": "Over-cautious · +1 hr 30 · +₹600"
             }
           ]
         },
@@ -552,32 +568,40 @@
         {
           "id": "q4",
           "type": "question",
-          "question": "How do we let AI look at these records?",
+          "question": "AI could find mothers at risk in 12,000 records. What do I let it see?",
           "options": [
             {
               "id": "A",
-              "text": "Remove names and numbers, share only what the question needs, and keep the key that links them back safe at home",
-              "type": "careful",
-              "minutes": 30,
-              "rupees": 200,
-              "outcome": "Slower by half an hour, and the mothers who need care are found without exposing anyone."
-            },
-            {
-              "id": "B",
-              "text": "Remove names and numbers, then upload the rest",
+              "text": "Full records, names and numbers removed",
               "type": "shortcut",
               "minutes": -30,
               "rupees": 0,
               "bolt": "bolt3",
-              "outcome": "Names gone, analysis running, 30 minutes saved. That bolt looks loose."
+              "outcome": "Shortcut · −30 min · Bolt 3"
+            },
+            {
+              "id": "B",
+              "text": "Only age group and risk factors, coded",
+              "type": "careful",
+              "minutes": 30,
+              "rupees": 200,
+              "outcome": "Careful · +45 min · +₹200"
             },
             {
               "id": "C",
-              "text": "Lock everything away and test nothing",
+              "text": "Full records, on our own offline machine",
+              "type": "careful",
+              "minutes": 30,
+              "rupees": 200,
+              "outcome": "Careful · +30 min · +₹700"
+            },
+            {
+              "id": "D",
+              "text": "Keep AI out; nurses flag by hand",
               "type": "over-cautious",
               "minutes": 60,
               "rupees": 500,
-              "outcome": "Nothing exposed, and nothing learned. The mothers who needed early care are still invisible."
+              "outcome": "Over-cautious · +1 hr · +₹500"
             }
           ]
         },
@@ -612,7 +636,7 @@
           "id": "insight",
           "type": "card",
           "title": "Insight Out by Tech4Good",
-          "text": "Questions like these are what Insight Out explores: making AI useful for social-impact work while taking data, privacy and infrastructure seriously.",
+          "text": "Through Insight Out, we explore AI’s data privacy, security, and infrastructure questions with social-impact orgs.",
           "link": "PLACEHOLDER: Insight Out link",
           "button": "Show Insight Out",
           "note": "Point people to Insight Out if they want to take these questions further."
@@ -630,44 +654,53 @@
       "theme": "Sustainability",
       "persona": "ravi",
       "sign": "Jhansi 1,650 km",
-      "voice": "Two years ago, a college team built us an app for crop prices. They graduated. Now it's broken, nobody has the password, and farmers still call me about it.",
+      "voice": "Students built our crop-price app, graduated, and left it broken. Now 500 farmers rely on me to fix what was left behind",
       "steps": [
         {
           "id": "q5",
           "type": "question",
-          "question": "Our tool is working. What do we do before moving on?",
+          "question": "Say I fix it, where should the app live?",
           "options": [
             {
               "id": "A",
-              "text": "Shared logins, plain notes and a named owner, then launch",
-              "type": "careful",
-              "minutes": 30,
-              "rupees": 200,
-              "outcome": "Thorough. Anyone in the team can pick this up tomorrow."
-            },
-            {
-              "id": "B",
-              "text": "Launch now, and write the notes once it's stable",
+              "text": "Hand it to a vendor to host and run",
               "type": "shortcut",
               "minutes": -30,
               "rupees": 0,
-              "bolt": "bolt4",
-              "outcome": "Launched, 30 minutes ahead. Who has the password?"
+              "bolt": "bolt4a",
+              "outcome": "Shortcut · −30 min · Bolt 4a"
+            },
+            {
+              "id": "B",
+              "text": "Free hosting; it costs nothing",
+              "type": "shortcut",
+              "minutes": -30,
+              "rupees": 0,
+              "bolt": "bolt4b",
+              "outcome": "Shortcut · −30 min · Bolt 4b"
             },
             {
               "id": "C",
-              "text": "Keep it simple: basic notes, a shared login and a monthly check-in",
+              "text": "Managed hosting, under our own account",
               "type": "smart",
               "minutes": 15,
               "rupees": 150,
-              "outcome": "Light and practical. It'll still be standing months from now."
+              "outcome": "Smart · +15 min · +₹150"
+            },
+            {
+              "id": "D",
+              "text": "Self-hosted on our own server; full control",
+              "type": "careful",
+              "minutes": 30,
+              "rupees": 200,
+              "outcome": "Careful · +30 min · +₹1000"
             }
           ]
         },
         {
           "id": "t5",
           "type": "takeaway",
-          "text": "Launching is a moment. Keeping it running is a habit."
+          "text": "Building is a moment. Keeping it alive is a habit."
         }
       ],
       "handover": "Let's ride. Everyone's waiting.",
